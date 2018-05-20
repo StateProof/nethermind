@@ -23,7 +23,7 @@ using Nethermind.Core.Specs;
 
 namespace Nethermind.Store
 {
-    public interface IStateProvider : ISnapshotable
+    public interface IStateProvider
     {
         Keccak StateRoot { get; set; }
 
@@ -58,5 +58,11 @@ namespace Nethermind.Store
         Keccak UpdateCode(byte[] code);
 
         void ClearCaches(); // TODO: temp while designing DB <-> store interaction
+
+        void Restore(int snapshot);
+
+        void Commit(IReleaseSpec releaseSpec);
+
+        int TakeSnapshot();
     }
 }

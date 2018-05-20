@@ -27,5 +27,9 @@ namespace Nethermind.Store
         }
         
         void Remove(byte[] key);
+
+        void Commit();
+
+        void Restore();
     }
 }

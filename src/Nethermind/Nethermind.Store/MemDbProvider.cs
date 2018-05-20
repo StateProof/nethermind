@@ -85,16 +85,21 @@ namespace Nethermind.Store
             }
         }
 
-        public void Commit(IReleaseSpec spec)
+        public void Commit()
         {
             if(_logger.IsDebugEnabled) _logger.Debug("Committing all DBs");
 
             foreach (ISnapshotableDb db in AllDbs)
             {
-                db.Commit(spec);
+                db.Commit();
             }
 
             Snapshots.Pop();
+        }
+
+        public void Commit(IReleaseSpec spec)
+        {
+            Commit();
         }
 
         public int TakeSnapshot()

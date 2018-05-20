@@ -271,7 +271,7 @@ namespace Nethermind.Blockchain
                 _logger.Debug($"Committing block - state root {_stateProvider.StateRoot}");
             }
 
-            _dbProvider.Commit(_specProvider.GetSpec(suggestedBlock.Number));
+            _dbProvider.Commit();
             return processedBlock;
         }
 

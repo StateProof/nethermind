@@ -199,7 +199,7 @@ namespace Nethermind.Runner.Runners
                     ? new BigInteger(new Hex(account.Value.Balance)) : BigInteger.Parse(account.Value.Balance));
             }
             _stateProvider.Commit(_specProvider.GenesisSpec);
-            _dbProvider.Commit(_specProvider.GenesisSpec);
+            _dbProvider.Commit();
             return _stateProvider.StateRoot;
         }
 

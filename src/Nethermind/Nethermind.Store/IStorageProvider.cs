@@ -18,10 +18,11 @@
 
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.Store
 {
-    public interface IStorageProvider : ISnapshotable
+    public interface IStorageProvider
     {
         byte[] Get(StorageAddress storageAddress);
 
@@ -30,5 +31,11 @@ namespace Nethermind.Store
         Keccak GetRoot(Address address);
         
         void ClearCaches(); // TODO: temp while designing DB <-> store interaction
+
+        void Restore(int snapshot);
+
+        void Commit(IReleaseSpec releaseSpec);
+
+        int TakeSnapshot();
     }
 }

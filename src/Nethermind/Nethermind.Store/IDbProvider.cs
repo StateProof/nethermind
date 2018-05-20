@@ -20,10 +20,13 @@ using Nethermind.Core;
 
 namespace Nethermind.Store
 {
-    public interface IDbProvider : ISnapshotable
+    public interface IDbProvider
     {
         ISnapshotableDb GetOrCreateStateDb();
         ISnapshotableDb GetOrCreateStorageDb(Address address);
         ISnapshotableDb GetOrCreateCodeDb();
+        void Restore(int snapshot);
+        void Commit();
+        int TakeSnapshot();
     }
 }

@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
-using System.Threading;
 using System.Threading.Tasks;
 using Nethermind.Blockchain;
 using Nethermind.Blockchain.Difficulty;
@@ -367,14 +366,33 @@ namespace Nethermind.PerfTest
                     stopwatch.Stop();
                     long ns = 1_000_000_000L * stopwatch.ElapsedTicks / Stopwatch.Frequency;
                     long ms = 1_000L * stopwatch.ElapsedTicks / Stopwatch.Frequency;
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} (ns)     : " + ns);
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} (ms)     : " + ms);
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} blocks/s : {(decimal)currentHead.Number / (ms / 1000m), 5}");
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} Mgas/s   : {((decimal)totalGas / 1000000) / (ms / 1000m), 5}");
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} mem (GC) : {GC.GetTotalMemory(true)}");
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} GC (0)   : {GC.CollectionCount(0)}");
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} GC (1)   : {GC.CollectionCount(1)}");
-                    _logger.Warn($"TOTAL after {args.Block.Number + 1} GC (2)   : {GC.CollectionCount(2)}");
+                    BigInteger number = args.Block.Number + 1;
+                    _logger.Warn($"TOTAL after {number} (ns)     : " + ns);
+                    _logger.Warn($"TOTAL after {number} (ms)     : " + ms);
+                    _logger.Warn($"TOTAL after {number} blocks/s : {(decimal)currentHead.Number / (ms / 1000m), 5}");
+                    _logger.Warn($"TOTAL after {number} Mgas/s   : {((decimal)totalGas / 1000000) / (ms / 1000m), 5}");
+                    _logger.Warn($"TOTAL after {number} mem (GC) : {GC.GetTotalMemory(true)}");
+                    _logger.Warn($"TOTAL after {number} GC (0)   : {GC.CollectionCount(0)}");
+                    _logger.Warn($"TOTAL after {number} GC (1)   : {GC.CollectionCount(1)}");
+                    _logger.Warn($"TOTAL after {number} GC (2)   : {GC.CollectionCount(2)}");
+
+                    _logger.Warn($"TOTAL after {number} blocks DB reads      : {StoreMetrics.BlocksDbReads}");
+                    _logger.Warn($"TOTAL after {number} blocks DB writes     : {StoreMetrics.BlocksDbWrites}");
+                    _logger.Warn($"TOTAL after {number} infos DB reads       : {StoreMetrics.BlockInfosDbReads}");
+                    _logger.Warn($"TOTAL after {number} infos DB writes      : {StoreMetrics.BlockInfosDbWrites}");
+                    _logger.Warn($"TOTAL after {number} state tree reads     : {StoreMetrics.StateTreeReads}");
+                    _logger.Warn($"TOTAL after {number} state tree writes    : {StoreMetrics.StateTreeWrites}");
+                    _logger.Warn($"TOTAL after {number} state DB reads       : {StoreMetrics.StateDbReads}");
+                    _logger.Warn($"TOTAL after {number} state DB writes      : {StoreMetrics.StateDbWrites}");
+                    _logger.Warn($"TOTAL after {number} storage tree reads   : {StoreMetrics.StorageTreeReads}");
+                    _logger.Warn($"TOTAL after {number} storage tree writes  : {StoreMetrics.StorageTreeWrites}");
+                    _logger.Warn($"TOTAL after {number} storage DB reads     : {StoreMetrics.StorageDbReads}");
+                    _logger.Warn($"TOTAL after {number} storage DB writes    : {StoreMetrics.StorageDbWrites}");
+                    _logger.Warn($"TOTAL after {number} tree node hash       : {StoreMetrics.TreeNodeHashCalculations}");
+                    _logger.Warn($"TOTAL after {number} tree node RLP decode : {StoreMetrics.TreeNodeRlpDecodings}");
+                    _logger.Warn($"TOTAL after {number} tree node RLP encode : {StoreMetrics.TreeNodeRlpEncodings}");
+
+                    // disk space
                     stopwatch.Start();
                 }                
             };

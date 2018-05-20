@@ -202,8 +202,14 @@ namespace Nethermind.Evm
 
                 if (transaction.IsTransfer)
                 {
-                    _stateProvider.UpdateBalance(sender, -value, spec);
+                    throw new NotImplementedException(); // TODO: review / base on recipient code?
+                    if (!_stateProvider.AccountExists(recipient))
+                    {
+                        _stateProvider.CreateAccount(recipient, 0);
+                    }
+
                     _stateProvider.UpdateBalance(recipient, value, spec);
+                    _stateProvider.UpdateBalance(recipient, unspentGas, spec);
                     statusCode = StatusCode.Success;
                 }
                 else

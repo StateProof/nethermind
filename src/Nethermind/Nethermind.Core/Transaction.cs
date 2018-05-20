@@ -39,7 +39,7 @@ namespace Nethermind.Core
         public bool IsSigned => Signature != null;
         public bool IsContractCreation => Init != null;
         public bool IsMessageCall => Data != null;
-        public bool IsTransfer => !IsContractCreation && !IsMessageCall;
+        public bool IsTransfer => !IsContractCreation && !IsMessageCall; // TODO: review this with RLP
         public bool IsValid { get; set; }
         public Keccak Hash { get; set; }
         public PublicKey DeliveredBy { get; set; } // TODO: create a wrapper?

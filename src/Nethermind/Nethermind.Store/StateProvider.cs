@@ -458,6 +458,7 @@ namespace Nethermind.Store
             
             _lastAddress = address;
 
+            StoreMetrics.StateTreeReads++;
             NewRlp.DecoderContext rlp = _state.Get(address);
             if (rlp?.IsNull ?? true)
             {
@@ -473,6 +474,7 @@ namespace Nethermind.Store
         private void SetState(Address address, Account account)
         {
             _stateCache.Set(address, account);
+            StoreMetrics.StateTreeWrites++;
             _state.Set(address, account == null ? null : Rlp.Encode(account));
         }
 

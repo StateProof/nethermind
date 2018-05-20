@@ -16,9 +16,16 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Nethermind.Core.Specs;
+
 namespace Nethermind.Store
 {
-    public interface ISnapshotableDb : IDb, ISnapshotable
+    public interface ISnapshotableDb : IDb
     {
+        void Restore(int snapshot);
+
+        void Commit(IReleaseSpec releaseSpec);
+
+        int TakeSnapshot();
     }
 }

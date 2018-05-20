@@ -66,13 +66,13 @@ namespace Nethermind.Store
 
         public int TakeSnapshot()
         {
-            if(_logger.IsDebugEnabled) _logger.Debug($"  STORAGE SNAPSHOT {_currentPosition}");
+            if (_logger.IsDebugEnabled) _logger.Debug($"  STORAGE SNAPSHOT {_currentPosition}");
             return _currentPosition;
         }
 
         public void Restore(int snapshot)
         {
-            if(_logger.IsDebugEnabled) _logger.Debug($"  RESTORING STORAGE SNAPSHOT {snapshot}");
+            if (_logger.IsDebugEnabled) _logger.Debug($"  RESTORING STORAGE SNAPSHOT {snapshot}");
             if (snapshot > _currentPosition)
             {
                 throw new InvalidOperationException($"{nameof(StorageProvider)} tried to restore snapshot {snapshot} beyond current position {_currentPosition}");
@@ -133,11 +133,11 @@ namespace Nethermind.Store
         {
             if (_currentPosition == -1)
             {
-                if(_logger.IsDebugEnabled) _logger.Debug("  NO STORAGE CHANGES TO COMMIT");
+                if (_logger.IsDebugEnabled) _logger.Debug("  NO STORAGE CHANGES TO COMMIT");
                 return;
             }
 
-            if(_logger.IsDebugEnabled) _logger.Debug("  COMMITTING STORAGE CHANGES");
+            if (_logger.IsDebugEnabled) _logger.Debug("  COMMITTING STORAGE CHANGES");
 
             if (_changes[_currentPosition] == null)
             {
@@ -174,9 +174,10 @@ namespace Nethermind.Store
                     break;
                     case ChangeType.Update:
 
-                    if(_logger.IsDebugEnabled) _logger.Debug($"  UPDATE {change.StorageAddress.Address}_{change.StorageAddress.Index} V = {Hex.FromBytes(change.Value, true)}");
+                    if (_logger.IsDebugEnabled) _logger.Debug($"  UPDATE {change.StorageAddress.Address}_{change.StorageAddress.Index} V = {Hex.FromBytes(change.Value, true)}");
 
                     StorageTree tree = GetOrCreateStorage(change.StorageAddress.Address);
+                    StoreMetrics.StorageTreeWrites++;
                     tree.Set(change.StorageAddress.Index, change.Value);
                     _storageCache.Set(change.StorageAddress, change.Value);
                     break;
@@ -204,7 +205,7 @@ namespace Nethermind.Store
 
         public void ClearCaches()
         {
-            if(_logger.IsDebugEnabled) _logger.Debug("  CLEARING STORAGE PROVIDER CACHES");
+            if (_logger.IsDebugEnabled) _logger.Debug("  CLEARING STORAGE PROVIDER CACHES");
 
             _cache.Clear();
             _currentPosition = -1;
@@ -253,6 +254,7 @@ namespace Nethermind.Store
 
             //            _logger.Warn($"Get storage {storageAddress.Address} {storageAddress.Index}");
 
+            StoreMetrics.StorageTreeReads++;
             byte[] value = tree.Get(storageAddress.Index);
             PushJustCache(storageAddress, value);
             _storageCache.Set(storageAddress, value);

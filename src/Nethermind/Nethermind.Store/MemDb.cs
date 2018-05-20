@@ -16,6 +16,7 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using Nethermind.Core.Extensions;
 
@@ -24,7 +25,7 @@ namespace Nethermind.Store
     public class MemDb : IDb
     {
         private readonly Dictionary<byte[], byte[]> _db;
-        
+
         public byte[] this[byte[] key]
         {
             get => _db.ContainsKey(key) ? _db[key] : null;
@@ -39,6 +40,15 @@ namespace Nethermind.Store
         public void Remove(byte[] key)
         {
             _db.Remove(key);
+        }
+
+        public void Commit()
+        {
+        }
+
+        public void Restore()
+        {
+            throw new NotImplementedException();
         }
 
         public MemDb()
