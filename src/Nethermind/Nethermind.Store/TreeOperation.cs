@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Nethermind.Core;
 using Nethermind.Core.Extensions;
 
@@ -59,7 +58,8 @@ namespace Nethermind.Store
                 }
 
                 LeafNode leafNode = new LeafNode(new HexPrefix(true, _updatePath), _updateValue);
-                _tree.StoreNode(leafNode, true);
+                leafNode.IsDirty = true;
+                _tree.Root = leafNode; 
                 return _updateValue;
             }
 
@@ -68,6 +68,12 @@ namespace Nethermind.Store
 
         private byte[] TraverseNode(Node node)
         {
+            if (node is KeccakOrRlp keccakOrRlp)
+            {
+                Node resolvedNode = _tree.GetNode(keccakOrRlp);
+                return TraverseNode(resolvedNode);
+            }
+
             if (node is LeafNode leaf)
             {
                 return TraverseLeaf(leaf);
@@ -83,7 +89,7 @@ namespace Nethermind.Store
                 return TraverseExtension(extension);
             }
 
-            throw new NotImplementedException($"Unknown node type {typeof(Node).Name}");
+            throw new NotImplementedException($"Unknown node type {node.GetType().Name}");
         }
 
         private int RemainingUpdatePathLength => _updatePath.Length - _currentIndex;
@@ -107,7 +113,6 @@ namespace Nethermind.Store
 //            Keccak previousRootHash = _tree.RootHash;
 
             bool isRoot = _nodeStack.Count == 0;
-            KeccakOrRlp nextNodeHash = _tree.StoreNode(node, isRoot);
             Node nextNode = node;
 
             // nodes should immutable here I guess
@@ -120,16 +125,16 @@ namespace Nethermind.Store
 
                 if (node is LeafNode leaf)
                 {
-                    throw new InvalidOperationException($"Leaf {leaf} cannot be a parent of {nextNodeHash}");
+                    throw new InvalidOperationException($"Leaf {leaf} cannot be a parent of another node");
                 }
 
                 if (node is BranchNode branch)
                 {
 //                    _tree.DeleteNode(branch.Nodes[parentOnStack.PathIndex], true);
-                    branch.Nodes[parentOnStack.PathIndex] = nextNodeHash;
+                    branch.Nodes[parentOnStack.PathIndex] = nextNode;
+                    branch.IsDirty = true;
                     if (branch.IsValid)
                     {
-                        nextNodeHash = _tree.StoreNode(branch, isRoot);
                         nextNode = branch;
                     }
                     else
@@ -137,38 +142,37 @@ namespace Nethermind.Store
                         if (branch.Value.Length != 0)
                         {
                             LeafNode leafFromBranch = new LeafNode(new HexPrefix(true), branch.Value);
-                            nextNodeHash = _tree.StoreNode(leafFromBranch, isRoot);
+                            leafFromBranch.IsDirty = true;
                             nextNode = leafFromBranch;
                         }
                         else
                         {
                             int childNodeIndex = Array.FindIndex(branch.Nodes, n => n != null);
-                            KeccakOrRlp childNodeHash = branch.Nodes[childNodeIndex];
-                            if (childNodeHash == null)
+                            Node childNode = branch.Nodes[childNodeIndex];
+                            if (childNode == null)
                             {
                                 throw new InvalidOperationException("Before updating branch should have had at least two non-empty children");
                             }
-                            
+
                             // need to restore this node now?
-                            Node childNode = _tree.GetNode(childNodeHash);
                             if (childNode is BranchNode)
                             {
-                                ExtensionNode extensionFromBranch = new ExtensionNode(new HexPrefix(false, (byte)childNodeIndex), childNodeHash);
-                                nextNodeHash = _tree.StoreNode(extensionFromBranch, isRoot);
+                                ExtensionNode extensionFromBranch = new ExtensionNode(new HexPrefix(false, (byte)childNodeIndex), childNode);
+                                extensionFromBranch.IsDirty = true;
                                 nextNode = extensionFromBranch;
                             }
                             else if (childNode is ExtensionNode childExtension)
                             {
 //                                _tree.DeleteNode(childNodeHash, true);
                                 ExtensionNode extensionFromBranch = new ExtensionNode(new HexPrefix(false, Bytes.Concat((byte)childNodeIndex, childExtension.Path)), childExtension.NextNode);
-                                nextNodeHash = _tree.StoreNode(extensionFromBranch, isRoot);
+                                extensionFromBranch.IsDirty = true;
                                 nextNode = extensionFromBranch;
                             }
                             else if (childNode is LeafNode childLeaf)
                             {
 //                                _tree.DeleteNode(childNodeHash, true);
                                 LeafNode leafFromBranch = new LeafNode(new HexPrefix(true, Bytes.Concat((byte)childNodeIndex, childLeaf.Path)), childLeaf.Value);
-                                nextNodeHash = _tree.StoreNode(leafFromBranch, isRoot);
+                                leafFromBranch.IsDirty = true;
                                 nextNode = leafFromBranch;
                             }
                             else
@@ -184,19 +188,19 @@ namespace Nethermind.Store
                     if (nextNode is LeafNode childLeaf)
                     {
                         LeafNode leafFromExtension = new LeafNode(new HexPrefix(true, Bytes.Concat(extension.Path, childLeaf.Path)), childLeaf.Value);
-                        nextNodeHash = _tree.StoreNode(leafFromExtension, isRoot);
+                        leafFromExtension.IsDirty = true;
                         nextNode = leafFromExtension;
                     }
                     else if (nextNode is ExtensionNode childExtension)
                     {
                         ExtensionNode extensionFromExtension = new ExtensionNode(new HexPrefix(false, Bytes.Concat(extension.Path, childExtension.Path)), childExtension.NextNode);
-                        nextNodeHash = _tree.StoreNode(extensionFromExtension, isRoot);
+                        extensionFromExtension.IsDirty = true;
                         nextNode = extensionFromExtension;
                     }
                     else if (nextNode is BranchNode)
                     {
-                        extension.NextNode = nextNodeHash;
-                        nextNodeHash = _tree.StoreNode(extension, isRoot);
+                        extension.NextNode = nextNode;
+                        extension.IsDirty = true;
                         nextNode = extension;
                     }
                     else
@@ -210,6 +214,8 @@ namespace Nethermind.Store
                 }
             }
 
+            _tree.Root = nextNode;
+
 //            _tree.DeleteNode(new KeccakOrRlp(previousRootHash), true);
         }
 
@@ -222,12 +228,14 @@ namespace Nethermind.Store
                     return node.Value;
                 }
 
+                // or delete (null update)
                 if (_updateValue == null)
                 {
                     UpdateHashes(null);
                 }
                 else
                 {
+                    node.IsDirty = true;
                     node.Value = _updateValue;
                     UpdateHashes(node);
                 }
@@ -235,11 +243,11 @@ namespace Nethermind.Store
                 return _updateValue;
             }
 
-            KeccakOrRlp nextHash = node.Nodes[_updatePath[_currentIndex]];
+            Node nextNode = node.Nodes[_updatePath[_currentIndex]];
             _nodeStack.Push(new StackedNode(node, _updatePath[_currentIndex]));
             _currentIndex++;
 
-            if (nextHash == null)
+            if (nextNode == null)
             {
                 if (!_isUpdate)
                 {
@@ -258,12 +266,12 @@ namespace Nethermind.Store
 
                 byte[] leafPath = _updatePath.Slice(_currentIndex, _updatePath.Length - _currentIndex);
                 LeafNode leaf = new LeafNode(new HexPrefix(true, leafPath), _updateValue);
+                leaf.IsDirty = true;
                 UpdateHashes(leaf);
 
                 return _updateValue;
             }
 
-            Node nextNode = _tree.GetNode(nextHash);
             return TraverseNode(nextNode);
         }
 
@@ -308,6 +316,7 @@ namespace Nethermind.Store
                 if (!Bytes.UnsafeCompare(node.Value, _updateValue))
                 {
                     LeafNode newLeaf = new LeafNode(new HexPrefix(true, RemainingUpdatePath), _updateValue);
+                    newLeaf.IsDirty = true;
                     UpdateHashes(newLeaf);
                     return _updateValue;
                 }
@@ -333,12 +342,15 @@ namespace Nethermind.Store
             if (extensionLength != 0)
             {
                 ExtensionNode extension = new ExtensionNode();
+                extension.IsDirty = true;
                 byte[] extensionPath = longerPath.Slice(0, extensionLength);
                 extension.Key = new HexPrefix(false, extensionPath);
                 _nodeStack.Push(new StackedNode(extension, 0));
             }
 
             BranchNode branch = new BranchNode();
+            branch.IsDirty = true;
+
             if (extensionLength == shorterPath.Length)
             {
                 branch.Value = shorterPathValue;
@@ -347,11 +359,13 @@ namespace Nethermind.Store
             {
                 byte[] shortLeafPath = shorterPath.Slice(extensionLength + 1, shorterPath.Length - extensionLength - 1);
                 LeafNode shortLeaf = new LeafNode(new HexPrefix(true, shortLeafPath), shorterPathValue);
-                branch.Nodes[shorterPath[extensionLength]] = _tree.StoreNode(shortLeaf);
+                shortLeaf.IsDirty = true;
+                branch.Nodes[shorterPath[extensionLength]] = shortLeaf;
             }
 
             byte[] leafPath = longerPath.Slice(extensionLength + 1, longerPath.Length - extensionLength - 1);
             LeafNode leaf = new LeafNode(new HexPrefix(true, leafPath), longerPathValue);
+            leaf.IsDirty = true;
             _nodeStack.Push(new StackedNode(branch, longerPath[extensionLength]));
             UpdateHashes(leaf);
 
@@ -369,7 +383,7 @@ namespace Nethermind.Store
             {
                 _currentIndex += extensionLength;
                 _nodeStack.Push(new StackedNode(node, 0));
-                Node nextNode = _tree.GetNode(node.NextNode);
+                Node nextNode = node.NextNode;
                 return TraverseNode(nextNode);
             }
 
@@ -391,12 +405,14 @@ namespace Nethermind.Store
             if (extensionLength != 0)
             {
                 ExtensionNode extension = new ExtensionNode();
+                extension.IsDirty = true;
                 byte[] extensionPath = node.Path.Slice(0, extensionLength);
                 extension.Key = new HexPrefix(false, extensionPath);
                 _nodeStack.Push(new StackedNode(extension, 0));
             }
 
             BranchNode branch = new BranchNode();
+            branch.IsDirty = true;
             if (extensionLength == RemainingUpdatePath.Length)
             {
                 branch.Value = _updateValue;
@@ -405,14 +421,16 @@ namespace Nethermind.Store
             {
                 byte[] path = RemainingUpdatePath.Slice(extensionLength + 1, RemainingUpdatePath.Length - extensionLength - 1);
                 LeafNode shortLeaf = new LeafNode(new HexPrefix(true, path), _updateValue);
-                branch.Nodes[RemainingUpdatePath[extensionLength]] = _tree.StoreNode(shortLeaf);
+                shortLeaf.IsDirty = true;
+                branch.Nodes[RemainingUpdatePath[extensionLength]] = shortLeaf;
             }
 
             if (node.Path.Length - extensionLength > 1)
             {
                 byte[] extensionPath = node.Path.Slice(extensionLength + 1, node.Path.Length - extensionLength - 1);
                 ExtensionNode secondExtension = new ExtensionNode(new HexPrefix(false, extensionPath), node.NextNode);
-                branch.Nodes[node.Path[extensionLength]] = _tree.StoreNode(secondExtension);
+                secondExtension.IsDirty = true;
+                branch.Nodes[node.Path[extensionLength]] = secondExtension;
             }
             else
             {

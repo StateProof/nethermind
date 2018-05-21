@@ -27,7 +27,7 @@ namespace Nethermind.Store
         }
 
         [DebuggerStepThrough]
-        public ExtensionNode(HexPrefix key, KeccakOrRlp nextNode)
+        public ExtensionNode(HexPrefix key, Node nextNode)
         {
             Key = key;
             NextNode = nextNode;
@@ -35,7 +35,7 @@ namespace Nethermind.Store
 
         public byte[] Path => Key.Path;
         public HexPrefix Key { get; set; }
-        public KeccakOrRlp NextNode { get; set; }
+        public Node NextNode { get; set; }
 
         public override string ToString()
         {

@@ -143,7 +143,7 @@ namespace Nethermind.PerfTest
         {
             ILogger logger = NullLogger.Instance;
             MemDbProvider memDbProvider = new MemDbProvider(logger);
-            StateTree stateTree = new StateTree(memDbProvider.GetOrCreateStateDb());
+            StateTree stateTree = memDbProvider.GetOrCreateStateDb();
             IStateProvider stateProvider = new StateProvider(stateTree, logger, memDbProvider.GetOrCreateCodeDb());
             IBlockTree blockTree = new BlockTree(new MemDb(), new MemDb(), new MemDb(), FrontierSpecProvider.Instance, logger);
             Machine = new VirtualMachine(FrontierSpecProvider.Instance, stateProvider, new StorageProvider(memDbProvider, stateProvider, logger), new BlockhashProvider(blockTree), NullLogger.Instance);
@@ -311,7 +311,7 @@ namespace Nethermind.PerfTest
             /* state & storage */
 
             var dbProvider = new RocksDbProvider(DbBasePath, _logger);
-            var stateTree = new StateTree(dbProvider.GetOrCreateStateDb());
+            var stateTree = dbProvider.GetOrCreateStateDb();
             var stateProvider = new StateProvider(stateTree, _logger, dbProvider.GetOrCreateCodeDb());
             var storageProvider = new StorageProvider(dbProvider, stateProvider, _logger);
 
@@ -336,6 +336,9 @@ namespace Nethermind.PerfTest
             }
 
             stateProvider.Commit(specProvider.GenesisSpec);
+            stateTree.Commit();
+            dbProvider.Commit();
+
             chainSpec.Genesis.Header.StateRoot = stateProvider.StateRoot; // TODO: shall it be HeaderSpec and not BlockHeader?
             chainSpec.Genesis.Header.Hash = BlockHeader.CalculateHash(chainSpec.Genesis.Header);
             if (chainSpec.Genesis.Hash != new Keccak("0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d"))

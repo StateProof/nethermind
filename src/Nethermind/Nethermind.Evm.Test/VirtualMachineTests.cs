@@ -16,7 +16,6 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Diagnostics;
 using System.Numerics;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
@@ -35,12 +34,12 @@ namespace Nethermind.Evm.Test
         {
             _spec = RopstenSpecProvider.Instance;
             ILogger logger = NullLogger.Instance;
-            IDb codeDb = new MemDb();
-            _stateDb = new SnapshotableDb(new MemDb());
-            StateTree stateTree = new StateTree(_stateDb);
-            _stateProvider = new StateProvider(stateTree, logger, codeDb);
-            _storageDbProvider = new MemDbProvider(logger);
-            _storageProvider = new StorageProvider(_storageDbProvider, _stateProvider, logger);
+            
+            _dbProvider = new MemDbProvider(logger);
+            StateTree stateTree = _dbProvider.GetOrCreateStateDb();
+            _stateProvider = new StateProvider(stateTree, logger, _dbProvider.GetOrCreateCodeDb());
+            
+            _storageProvider = new StorageProvider(_dbProvider, _stateProvider, logger);
             _ethereumSigner = new EthereumSigner(_spec, logger);
             IBlockhashProvider blockhashProvider = new TestBlockhashProvider();
             IVirtualMachine virtualMachine = new VirtualMachine(_spec, _stateProvider, _storageProvider, blockhashProvider, logger);
@@ -54,33 +53,31 @@ namespace Nethermind.Evm.Test
             IsTracingEnabled = false;
             _trace = null;
 
-            _stateDbSnapshot = _stateDb.TakeSnapshot();
-            _storageDbSnapshot = _storageDbProvider.TakeSnapshot();
             _stateRoot = _stateProvider.StateRoot;
         }
 
-        private int _stateDbSnapshot;
-        private int _storageDbSnapshot;
         private Keccak _stateRoot;
 
         [TearDown]
         public void TearDown()
         {
-            _storageProvider.ClearCaches();
+            _dbProvider.Rollback();
+            
             _stateProvider.ClearCaches();
+            _storageProvider.ClearCaches();
+            
+            _stateProvider.Restore(-1);
+            _storageProvider.Restore(-1);
+            
             _stateProvider.StateRoot = _stateRoot;
-
-            _storageDbProvider.Restore(_storageDbSnapshot);
-            _stateDb.Restore(_stateDbSnapshot);
         }
 
         private readonly IEthereumSigner _ethereumSigner;
         private readonly ITransactionProcessor _processor;
         private readonly ISpecProvider _spec;
-        private readonly ISnapshotableDb _stateDb;
-        private readonly IDbProvider _storageDbProvider;
         private readonly IStateProvider _stateProvider;
         private readonly IStorageProvider _storageProvider;
+        private readonly IDbProvider _dbProvider;
 
         private TransactionReceipt Execute(params byte[] code)
         {
@@ -409,7 +406,7 @@ namespace Nethermind.Evm.Test
                 (byte)Instruction.PUSH1,
                 0,
                 (byte)Instruction.SSTORE);
-            Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 4 + GasCostOf.SReset, receipt.GasUsed, "gas");
+            Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 2 + GasCostOf.SReset, receipt.GasUsed, "gas");
             Assert.AreEqual(BigInteger.Zero.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
 

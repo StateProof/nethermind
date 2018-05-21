@@ -21,18 +21,18 @@ using Nethermind.Core.Encoding;
 
 namespace Nethermind.Store
 {
-    internal class KeccakOrRlp
+    internal class KeccakOrRlp : Node
     {
         public bool IsKeccak { get; }
 
         public KeccakOrRlp(Keccak keccak)
-        {
+        {   
             _keccak = keccak;
             IsKeccak = true;
         }
 
         public KeccakOrRlp(Rlp rlp)
-        {
+        {   
             if (rlp.Bytes.Length < 32)
             {
                 _rlp = rlp;

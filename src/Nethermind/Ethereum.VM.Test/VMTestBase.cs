@@ -49,7 +49,7 @@ namespace Ethereum.VM.Test
             ILogger stateLogger = NullLogger.Instance;
             _dbProvider = new MemDbProvider(stateLogger);
             _blockhashProvider = new TestBlockhashProvider();
-            _stateProvider = new StateProvider(new StateTree(_dbProvider.GetOrCreateStateDb()), stateLogger, _dbProvider.GetOrCreateCodeDb());
+            _stateProvider = new StateProvider(_dbProvider.GetOrCreateStateDb(), stateLogger, _dbProvider.GetOrCreateCodeDb());
             _storageProvider = new StorageProvider(new MemDbProvider(stateLogger), _stateProvider, stateLogger);
         }
 

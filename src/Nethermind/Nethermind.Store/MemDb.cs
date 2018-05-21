@@ -16,7 +16,6 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
 using Nethermind.Core.Extensions;
 
@@ -26,34 +25,46 @@ namespace Nethermind.Store
     {
         private readonly Dictionary<byte[], byte[]> _db;
 
+        private readonly Dictionary<byte[], byte[]> _pendingChanges;
+
         public byte[] this[byte[] key]
         {
-            get => _db.ContainsKey(key) ? _db[key] : null;
-            set => _db[key] = value;
-        }
-
-        public bool ContainsKey(byte[] key)
-        {
-            return _db.ContainsKey(key);
+            get => _pendingChanges.ContainsKey(key) ? _pendingChanges[key] : _db.ContainsKey(key) ? _db[key] : null;
+            set => _pendingChanges.Add(key, value);
         }
 
         public void Remove(byte[] key)
         {
-            _db.Remove(key);
+            _pendingChanges[key] = null;
         }
 
         public void Commit()
         {
+            foreach (KeyValuePair<byte[], byte[]> pendingChange in _pendingChanges)
+            {
+                if (pendingChange.Value == null && _db.ContainsKey(pendingChange.Key))
+                {
+                    _db.Remove(pendingChange.Key);
+                }
+
+                if (pendingChange.Value != null)
+                {
+                    _db[pendingChange.Key] = pendingChange.Value;
+                }
+            }
+            
+            _pendingChanges.Clear();
         }
 
-        public void Restore()
+        public void Rollback()
         {
-            throw new NotImplementedException();
+            _pendingChanges.Clear();
         }
 
         public MemDb()
         {
             _db = new Dictionary<byte[], byte[]>(1024, Bytes.EqualityComparer);
+            _pendingChanges = new Dictionary<byte[], byte[]>(1024, Bytes.EqualityComparer);
         }
     }
 }

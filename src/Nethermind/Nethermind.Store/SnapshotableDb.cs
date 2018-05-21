@@ -181,6 +181,11 @@ namespace Nethermind.Store
             _db.Commit();
         }
 
+        public void Rollback()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Commit(IReleaseSpec spec)
         {
             // TODO: spec is here as the interface is shared with storage and state providers which should probably not be the case

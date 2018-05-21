@@ -61,7 +61,9 @@ namespace Nethermind.Store
 
         public Keccak GetRoot(Address address)
         {
-            return GetOrCreateStorage(address).RootHash;
+            StorageTree storageTree = GetOrCreateStorage(address);
+            storageTree.Commit(); // TODO: review
+            return storageTree.RootHash;
         }
 
         public int TakeSnapshot()
@@ -218,7 +220,8 @@ namespace Nethermind.Store
         {
             if (!_storages.ContainsKey(address))
             {
-                _storages[address] = new StorageTree(_dbProvider.GetOrCreateStorageDb(address), _stateProvider.GetStorageRoot(address));
+                _storages[address] = _dbProvider.GetOrCreateStorageDb(address);
+                _storages[address].RootHash = _stateProvider.GetStorageRoot(address);
             }
 
             return GetStorage(address);
@@ -246,18 +249,15 @@ namespace Nethermind.Store
             byte[] cached = _storageCache.Get(storageAddress);
             if (cached != null)
             {
-                //                _logger.Warn($"Using cached storage for {storageAddress.Address} {storageAddress.Index}");
                 return cached;
             }
 
             StorageTree tree = GetOrCreateStorage(storageAddress.Address);
 
-            //            _logger.Warn($"Get storage {storageAddress.Address} {storageAddress.Index}");
-
             StoreMetrics.StorageTreeReads++;
             byte[] value = tree.Get(storageAddress.Index);
             PushJustCache(storageAddress, value);
-            _storageCache.Set(storageAddress, value);
+             _storageCache.Set(storageAddress, value);
             return value;
         }
 

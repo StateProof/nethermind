@@ -16,9 +16,6 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using Nethermind.Core;
-using Nethermind.Core.Specs;
-using Nethermind.Store;
 using NUnit.Framework;
 
 namespace Nethermind.Evm.Test
@@ -26,36 +23,5 @@ namespace Nethermind.Evm.Test
     [TestFixture]
     public class MemDbProviderTests
     {
-        [Test]
-        public void Does_not_keep_unnecessary_snapshots()
-        {
-            MemDbProvider provider = new MemDbProvider(NullLogger.Instance);
-            provider.GetOrCreateCodeDb();
-            provider.GetOrCreateStateDb();
-            provider.GetOrCreateStorageDb(Address.Zero);
-            for (int i = 0; i < 1000; i++)
-            {
-                provider.TakeSnapshot();
-                provider.Commit(Olympic.Instance);    
-            }
-            
-            Assert.AreEqual(0, provider.Snapshots.Count);
-        }
-        
-        [Test]
-        public void Can_restore()
-        {
-            MemDbProvider provider = new MemDbProvider(NullLogger.Instance);
-            provider.GetOrCreateCodeDb();
-            provider.GetOrCreateStateDb();
-            provider.GetOrCreateStorageDb(Address.Zero);
-            for (int i = 0; i < 1000; i++)
-            {
-                int snapshot = provider.TakeSnapshot();
-                provider.Restore(snapshot);    
-            }
-            
-            Assert.AreEqual(0, provider.Snapshots.Count);
-        }
     }
 }

@@ -59,7 +59,7 @@ namespace Nethermind.Blockchain.Test
 
             /* state & storage */
             var dbProvider = new MemDbProvider(logger);
-            var stateTree = new StateTree(dbProvider.GetOrCreateStateDb());
+            var stateTree = dbProvider.GetOrCreateStateDb();
             var stateProvider = new StateProvider(stateTree, logger, dbProvider.GetOrCreateCodeDb());
             var storageProvider = new StorageProvider(dbProvider, stateProvider, logger);
 

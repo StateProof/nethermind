@@ -30,6 +30,6 @@ namespace Nethermind.Store
 
         void Commit();
 
-        void Restore();
+        void Rollback();
     }
 }

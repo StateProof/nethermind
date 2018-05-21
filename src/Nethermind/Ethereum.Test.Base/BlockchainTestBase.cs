@@ -183,7 +183,7 @@ namespace Ethereum.Test.Base
 //            Debug.Listeners.Add(traceListener);
             
             IDbProvider dbProvider = new MemDbProvider(_stateLogger);
-            StateTree stateTree = new StateTree(dbProvider.GetOrCreateStateDb());
+            StateTree stateTree = dbProvider.GetOrCreateStateDb();
             
 
             ISpecProvider specProvider;

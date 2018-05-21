@@ -24,103 +24,67 @@ namespace Nethermind.Store
 {
     public class MemDbProvider : IDbProvider
     {
-        private readonly ISnapshotableDb _stateDb = new SnapshotableDb(new MemDb());
-        private readonly ISnapshotableDb _codeDb = new SnapshotableDb(new MemDb());
-        private readonly Dictionary<Address, ISnapshotableDb> _storageDbs = new Dictionary<Address, ISnapshotableDb>();
-        private IEnumerable<ISnapshotableDb> AllDbs
-        {
-            get
-            {
-                yield return _stateDb;
-                yield return _codeDb;
-                foreach (ISnapshotableDb storageDb in _storageDbs.Values)
-                {
-                    yield return storageDb;
-                }
-            }
-        }
+        private readonly StateTree _stateDb = new StateTree(new MemDb());
+        private readonly IDb _codeDb = new MemDb();
+        private readonly Dictionary<Address, StorageTree> _storageDbs = new Dictionary<Address, StorageTree>();
+
         
-        public ISnapshotableDb GetOrCreateStateDb()
+        public StateTree GetOrCreateStateDb()
         {
             return _stateDb;
         }
 
-        public ISnapshotableDb GetOrCreateStorageDb(Address address)
+        public StorageTree GetOrCreateStorageDb(Address address)
         {
             if (!_storageDbs.ContainsKey(address))
             {
-                _storageDbs[address] = new SnapshotableDb(new MemDb());
+                _storageDbs[address] = new StorageTree(new MemDb());
             }
 
             return _storageDbs[address];
         }
 
-        public ISnapshotableDb GetOrCreateCodeDb()
+        public IDb GetOrCreateCodeDb()
         {
             return _codeDb;
         }
         
         private readonly ILogger _logger;
 
-        internal Stack<Dictionary<ISnapshotableDb, int>> Snapshots { get; } = new Stack<Dictionary<ISnapshotableDb, int>>();
-
         public MemDbProvider(ILogger logger)
         {
             _logger = logger;
         }
-
-        public void Restore(int snapshot)
-        {
-            if(_logger.IsDebugEnabled) _logger.Debug($"Restoring all DBs to {snapshot}");
-
-            while (Snapshots.Count != snapshot)
-            {
-                Snapshots.Pop();
-            }
-
-            Dictionary<ISnapshotableDb, int> dbSnapshots = Snapshots.Pop();
-            foreach (ISnapshotableDb db in AllDbs)
-            {
-                db.Restore(dbSnapshots.ContainsKey(db) ? dbSnapshots[db] : -1);
-            }
-        }
-
+        
         public void Commit()
         {
             if(_logger.IsDebugEnabled) _logger.Debug("Committing all DBs");
 
-            foreach (ISnapshotableDb db in AllDbs)
+            foreach (StorageTree db in _storageDbs.Values)
             {
                 db.Commit();
             }
 
-            Snapshots.Pop();
+            _codeDb.Commit();
+            _stateDb.Commit();
+        }
+
+        public void Rollback()
+        {
+            if(_logger.IsDebugEnabled) _logger.Debug("Rolling back all DBs");
+
+            foreach (StorageTree db in _storageDbs.Values)
+            {
+                db.Rollback();
+            }
+
+            _codeDb.Rollback();
+            _stateDb.Rollback();
         }
 
         public void Commit(IReleaseSpec spec)
         {
             Commit();
-        }
-
-        public int TakeSnapshot()
-        {
-            Dictionary<ISnapshotableDb, int> dbSnapshots = new Dictionary<ISnapshotableDb, int>();
-            foreach (ISnapshotableDb db in AllDbs)
-            {
-                int dbSnapshot = db.TakeSnapshot();
-                if (dbSnapshot == -1)
-                {
-                    continue;
-                }
-
-                dbSnapshots.Add(db, dbSnapshot);
-            }
-
-            Snapshots.Push(dbSnapshots);
-
-            int snapshot = Snapshots.Count;
-            if(_logger.IsDebugEnabled) _logger.Debug($"Taking DB snapshot at {snapshot}");
-            return snapshot;
         }
     }
 }

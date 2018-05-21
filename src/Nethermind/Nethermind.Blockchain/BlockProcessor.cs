@@ -98,6 +98,8 @@ namespace Nethermind.Blockchain
                 receiptTree?.Set(Rlp.Encode(i).Bytes, receiptRlp);
             }
 
+            receiptTree?.Commit(); // TODO: review
+
             block.Receipts = receipts;
             block.Header.ReceiptsRoot = receiptTree?.RootHash ?? PatriciaTree.EmptyTreeHash;
             block.Header.Bloom = receipts.Length > 0 ? TransactionProcessor.BuildBloom(receipts.SelectMany(r => r.Logs).ToArray()) : Bloom.Empty; // TODO not tested anywhere at the time of writing
@@ -117,12 +119,12 @@ namespace Nethermind.Blockchain
                 txTree.Set(Rlp.Encode(i).Bytes, transactionRlp);
             }
 
+            txTree.Commit(); // TODO: review
             return txTree.RootHash;
         }
 
         public Block[] Process(Keccak branchStateRoot, Block[] suggestedBlocks, bool tryOnly)
         {
-            int dbSnapshot = _dbProvider.TakeSnapshot();
             Keccak snapshotStateRoot = _stateProvider.StateRoot;
 
             if (branchStateRoot != null && _stateProvider.StateRoot != branchStateRoot)
@@ -130,6 +132,9 @@ namespace Nethermind.Blockchain
                 // discarding one of the branches
                 _storageProvider.ClearCaches();
                 _stateProvider.ClearCaches();
+                
+                _dbProvider.Rollback();
+                
                 _stateProvider.StateRoot = branchStateRoot;
             }
 
@@ -149,9 +154,11 @@ namespace Nethermind.Blockchain
                         _logger.Debug($"REVERTING BLOCKS - STATE ROOT {_stateProvider.StateRoot}");
                     }
 
-                    _dbProvider.Restore(dbSnapshot);
                     _storageProvider.ClearCaches();
                     _stateProvider.ClearCaches();
+                    
+                    _dbProvider.Rollback();
+                    
                     _stateProvider.StateRoot = snapshotStateRoot;
 
                     if (_logger.IsDebugEnabled)
@@ -169,9 +176,11 @@ namespace Nethermind.Blockchain
                     _logger.Debug($"REVERTING BLOCKS - STATE ROOT {_stateProvider.StateRoot}");
                 }
 
-                _dbProvider.Restore(dbSnapshot);
                 _storageProvider.ClearCaches();
                 _stateProvider.ClearCaches();
+                
+                _dbProvider.Rollback();
+                
                 _stateProvider.StateRoot = snapshotStateRoot;
 
                 if (_logger.IsDebugEnabled)

@@ -22,11 +22,10 @@ namespace Nethermind.Store
 {
     public interface IDbProvider
     {
-        ISnapshotableDb GetOrCreateStateDb();
-        ISnapshotableDb GetOrCreateStorageDb(Address address);
-        ISnapshotableDb GetOrCreateCodeDb();
-        void Restore(int snapshot);
+        StateTree GetOrCreateStateDb();
+        StorageTree GetOrCreateStorageDb(Address address);
+        IDb GetOrCreateCodeDb();
         void Commit();
-        int TakeSnapshot();
+        void Rollback();
     }
 }

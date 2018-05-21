@@ -17,11 +17,13 @@
  */
 
 using System.Runtime.CompilerServices;
+
 [assembly: InternalsVisibleTo("Ethereum.Trie.Test")]
 
 namespace Nethermind.Store
 {
     internal abstract class Node
     {
+        public bool IsDirty { get; set; }
     }
 }

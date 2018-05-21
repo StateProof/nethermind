@@ -58,7 +58,15 @@ namespace Nethermind.Store
 
         public Keccak RootHash
         {
-            get => _rootHash;
+            get
+            {
+                if (Root?.IsDirty ?? false)
+                {
+                    throw new InvalidOperationException("Root is dirty when asking about the root hash");
+                }
+
+                return _rootHash;
+            }
             set
             {
                 _rootHash = value;
@@ -74,57 +82,65 @@ namespace Nethermind.Store
             }
         }
 
-        private static Rlp RlpEncode(KeccakOrRlp keccakOrRlp)
+        private static Rlp RlpEncode(Node node, bool asKeccakorRlp)
         {
-            return keccakOrRlp == null ? Rlp.OfEmptyByteArray : keccakOrRlp.GetOrEncodeRlp();
-        }
-
-        private static Rlp RlpEncode(Node node)
-        {
-            StoreMetrics.TreeNodeRlpEncodings++;
-
-            if (node is LeafNode leaf)
+            if (node == null)
             {
-                Rlp result = Rlp.Encode(leaf.Key.ToBytes(), leaf.Value);
-                return result;
+                return Rlp.OfEmptyByteArray;
             }
 
-            if (node is BranchNode branch)
+            if (node is KeccakOrRlp keccakOrRlp)
+            {
+                return keccakOrRlp.GetOrEncodeRlp();
+            }
+
+            Rlp result;
+            if (node is LeafNode leaf)
+            {
+                result = Rlp.Encode(leaf.Key.ToBytes(), leaf.Value);
+            }
+            else if (node is BranchNode branch)
             {
                 // Geth encoded a structure of nodes so child nodes are actual objects and not RLP of items,
                 // hence when RLP encoding nodes are not byte arrays but actual objects of format byte[][2] or their Keccak
-                Rlp result = Rlp.Encode(
-                    RlpEncode(branch.Nodes[0x0]),
-                    RlpEncode(branch.Nodes[0x1]),
-                    RlpEncode(branch.Nodes[0x2]),
-                    RlpEncode(branch.Nodes[0x3]),
-                    RlpEncode(branch.Nodes[0x4]),
-                    RlpEncode(branch.Nodes[0x5]),
-                    RlpEncode(branch.Nodes[0x6]),
-                    RlpEncode(branch.Nodes[0x7]),
-                    RlpEncode(branch.Nodes[0x8]),
-                    RlpEncode(branch.Nodes[0x9]),
-                    RlpEncode(branch.Nodes[0xa]),
-                    RlpEncode(branch.Nodes[0xb]),
-                    RlpEncode(branch.Nodes[0xc]),
-                    RlpEncode(branch.Nodes[0xd]),
-                    RlpEncode(branch.Nodes[0xe]),
-                    RlpEncode(branch.Nodes[0xf]),
+                result = Rlp.Encode(
+                    RlpEncode(branch.Nodes[0x0], true),
+                    RlpEncode(branch.Nodes[0x1], true),
+                    RlpEncode(branch.Nodes[0x2], true),
+                    RlpEncode(branch.Nodes[0x3], true),
+                    RlpEncode(branch.Nodes[0x4], true),
+                    RlpEncode(branch.Nodes[0x5], true),
+                    RlpEncode(branch.Nodes[0x6], true),
+                    RlpEncode(branch.Nodes[0x7], true),
+                    RlpEncode(branch.Nodes[0x8], true),
+                    RlpEncode(branch.Nodes[0x9], true),
+                    RlpEncode(branch.Nodes[0xa], true),
+                    RlpEncode(branch.Nodes[0xb], true),
+                    RlpEncode(branch.Nodes[0xc], true),
+                    RlpEncode(branch.Nodes[0xd], true),
+                    RlpEncode(branch.Nodes[0xe], true),
+                    RlpEncode(branch.Nodes[0xf], true),
                     Rlp.Encode(branch.Value ?? new byte[0]));
-                return result;
             }
-
-            if (node is ExtensionNode extension)
+            else if (node is ExtensionNode extension)
             {
-                return Rlp.Encode(extension.Key.ToBytes(), RlpEncode(extension.NextNode));
+                result = Rlp.Encode(extension.Key.ToBytes(), RlpEncode(extension.NextNode, true));
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unexpected node type {node.GetType().Name}");
             }
 
-            throw new InvalidOperationException("Unknown node type");
+            if (asKeccakorRlp)
+            {
+                return new KeccakOrRlp(result).GetOrEncodeRlp();
+            }
+
+            return result;
         }
-        
+
         internal static Node RlpDecode(Rlp bytes)
         {
-            StoreMetrics.TreeNodeRlpDecodings++;
             NewRlp.DecoderContext context = bytes.Bytes.AsRlpContext();
 
             context.ReadSequenceLength();
@@ -169,7 +185,7 @@ namespace Nethermind.Store
             return result;
         }
 
-        private static KeccakOrRlp DecodeChildNode(NewRlp.DecoderContext decoderContext)
+        private static Node DecodeChildNode(NewRlp.DecoderContext decoderContext)
         {
             if (decoderContext.IsSequenceNext())
             {
@@ -216,6 +232,7 @@ namespace Nethermind.Store
             {
                 Console.WriteLine(e);
             }
+
             return RlpDecode(rlp);
         }
 
@@ -251,37 +268,175 @@ namespace Nethermind.Store
 //            }
         }
 
-        internal KeccakOrRlp StoreNode(Node node, bool isRoot = false)
+        private Keccak Commit(BranchNode node, bool isRoot)
         {
-            if (isRoot && node == null)
+            if (!node.IsDirty)
             {
-//                DeleteNode(new KeccakOrRlp(RootHash));
-                Root = null;
-//                _db.Remove(RootHash);
-                RootHash = EmptyTreeHash;
-                return new KeccakOrRlp(EmptyTreeHash);
+                throw new InvalidOperationException("An attempt to commit a node that is not marked as dirty");
             }
 
-            if (node == null)
+            for (int i = 0; i < node.Nodes.Length; i++)
             {
-                return null;
+                if (node.Nodes[i]?.IsDirty ?? false)
+                {
+                    Commit(node.Nodes[i], false);
+                }
             }
 
-            Rlp rlp = RlpEncode(node);
+            node.IsDirty = false;
+            return StoreInDb(node, isRoot);
+        }
+
+        private Keccak Commit(LeafNode node, bool isRoot)
+        {
+            if (!node.IsDirty)
+            {
+                throw new InvalidOperationException("An attempt to commit a node that is not marked as dirty");
+            }
+
+            node.IsDirty = false;
+            return StoreInDb(node, isRoot);
+        }
+
+        private Keccak Commit(ExtensionNode node, bool isRoot)
+        {
+            if (!node.IsDirty)
+            {
+                throw new InvalidOperationException("An attempt to commit a node that is not marked as dirty");
+            }
+
+            if (node.NextNode.IsDirty)
+            {
+                Commit(node.NextNode, false);
+            }
+
+            node.IsDirty = false;
+            return StoreInDb(node, isRoot);
+        }
+
+        private Keccak Commit(Node node, bool isRoot)
+        {
+            if (node is BranchNode branch)
+            {
+                return Commit(branch, isRoot);
+            }
+
+            if (node is ExtensionNode extension)
+            {
+                return Commit(extension, isRoot);
+            }
+
+            if (node is LeafNode leaf)
+            {
+                return Commit(leaf, isRoot);
+            }
+
+            if (node is KeccakOrRlp)
+            {
+                throw new InvalidOperationException("An attempt to commit a node that is not marked as dirty");
+            }
+
+            throw new InvalidOperationException($"Unexpected node type {node.GetType().Name}");
+        }
+
+        public void Commit()
+        {
+            if (Root == null)
+            {
+                return;
+            }
+
+            if (!Root.IsDirty)
+            {
+                return;
+            }
+
+            // TODO: not setting through RootHash property because this would invoke Rlp Decode, to be reviewed
+            _rootHash = Commit(Root, true);
+        }
+
+        public void Rollback()
+        {
+            _db.Rollback();
+        }
+
+        private Keccak StoreInDb(Node node, bool isRoot)
+        {
+            Rlp rlp = RlpEncode(node, false);
             KeccakOrRlp key = new KeccakOrRlp(rlp);
             if (key.IsKeccak || isRoot)
             {
                 Keccak keyKeccak = key.GetOrComputeKeccak();
                 _db[keyKeccak.Bytes] = rlp.Bytes;
-
-                if (isRoot)
-                {
-                    Root = node;
-                    RootHash = keyKeccak;
-                }
+                return keyKeccak;
             }
 
-            return key;
+            return null;
         }
+
+//        internal void StoreNode(Node node, bool isRoot = false)
+//        {
+//            if (isRoot && node == null)
+//            {
+////                DeleteNode(new KeccakOrRlp(RootHash));
+//                Root = null;
+////                _db.Remove(RootHash);
+////                RootHash = EmptyTreeHash;
+//            }
+//
+//            if (node == null)
+//            {
+//                return;
+//            }
+//
+////            Rlp rlp = RlpEncode(node);
+////            KeccakOrRlp key = new KeccakOrRlp(rlp);
+////            if (key.IsKeccak || isRoot)
+////            {
+////                Keccak keyKeccak = key.GetOrComputeKeccak();
+////                _db[keyKeccak.Bytes] = rlp.Bytes;
+////
+////                if (isRoot)
+////                {
+//                    Root = node;
+////                    RootHash = keyKeccak;
+////                }
+////            }
+////
+////            return key;
+//        }
+
+        //internal KeccakOrRlp StoreNode(Node node, bool isRoot = false)
+        //{
+        //    if (isRoot && node == null)
+        //    {
+        //        //                DeleteNode(new KeccakOrRlp(RootHash));
+        //        Root = null;
+        //        //                _db.Remove(RootHash);
+        //        RootHash = EmptyTreeHash;
+        //        return new KeccakOrRlp(EmptyTreeHash);
+        //    }
+
+        //    if (node == null)
+        //    {
+        //        return null;
+        //    }
+
+        //    Rlp rlp = RlpEncode(node);
+        //    KeccakOrRlp key = new KeccakOrRlp(rlp);
+        //    if (key.IsKeccak || isRoot)
+        //    {
+        //        Keccak keyKeccak = key.GetOrComputeKeccak();
+        //        _db[keyKeccak.Bytes] = rlp.Bytes;
+
+        //        if (isRoot)
+        //        {
+        //            Root = node;
+        //            RootHash = keyKeccak;
+        //        }
+        //    }
+
+        //    return key;
+        //}
     }
 }
