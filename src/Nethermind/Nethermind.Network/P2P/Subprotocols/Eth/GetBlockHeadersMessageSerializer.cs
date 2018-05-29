@@ -41,15 +41,15 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
             Rlp.DecoderContext context = bytes.AsRlpContext();
             context.ReadSequenceLength();
             int position = context.Position;
-            byte[] startingBytes = context.ReadByteArray();
+            byte[] startingBytes = context.DecodeByteArray();
             context.Position = position;
             if (startingBytes.Length == 32)
             {
-                message.StartingBlockHash = context.ReadKeccak();
+                message.StartingBlockHash = context.DecodeKeccak();
             }
             else
             {
-                message.StartingBlockNumber = context.ReadUBigInt();
+                message.StartingBlockNumber = context.DecodeUBigInt();
             }
 
             message.MaxHeaders = context.DecodeInt();

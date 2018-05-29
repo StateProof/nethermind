@@ -32,8 +32,6 @@ namespace Nethermind.Core.Encoding
     {
         public static readonly Rlp OfEmptyByteArray = new Rlp(128);
 
-        public static readonly Rlp NullRlp = OfEmptyByteArray;
-
         public static readonly Rlp OfEmptySequence = new Rlp(192);
 
         /// <summary>
@@ -118,11 +116,18 @@ namespace Nethermind.Core.Encoding
             throw new RlpException($"{nameof(Rlp)} does not support decoding {typeof(T).Name}");
         }
 
-        public static Rlp Encode<T>(T[] item, RlpBehaviors behaviors = RlpBehaviors.None)
+        public static Rlp Encode<T>(T[] items, RlpBehaviors behaviors = RlpBehaviors.None)
         {
             if (Decoders.ContainsKey(typeof(T).TypeHandle))
             {
-                return ((IRlpDecoder<T>)Decoders[typeof(T).TypeHandle]).Encode(item, behaviors);
+                IRlpDecoder<T> decoder = (IRlpDecoder<T>)Decoders[typeof(T).TypeHandle];
+                Rlp[] rlpSequence = new Rlp[items.Length];
+                for (int i = 0; i < items.Length; i++)
+                {
+                    rlpSequence[i] = decoder.Encode(items[i], behaviors);
+                }
+
+                return Encode(rlpSequence);
             }
 
             throw new RlpException($"{nameof(Rlp)} does not support decoding {typeof(T).Name}");
@@ -409,6 +414,7 @@ namespace Nethermind.Core.Encoding
             public byte[] Data { get; }
 
             public int Position { get; set; }
+
             public int Length => Data.Length;
 
             public bool IsSequenceNext()
@@ -479,7 +485,7 @@ namespace Nethermind.Core.Encoding
                 return concatenationLength;
             }
 
-            public int DeserializeLength(int lengthOfLength)
+            private int DeserializeLength(int lengthOfLength)
             {
                 int result;
                 if (Data[Position] == 0)
@@ -534,7 +540,7 @@ namespace Nethermind.Core.Encoding
                 }
             }
 
-            public Keccak ReadKeccak()
+            public Keccak DecodeKeccak()
             {
                 int prefix = ReadByte();
                 if (prefix == 128)
@@ -551,7 +557,7 @@ namespace Nethermind.Core.Encoding
                 return new Keccak(buffer);
             }
 
-            public Address ReadAddress()
+            public Address DecodeAddress()
             {
                 int prefix = ReadByte();
                 if (prefix == 128)
@@ -568,16 +574,16 @@ namespace Nethermind.Core.Encoding
                 return new Address(buffer);
             }
 
-            public BigInteger ReadUBigInt()
+            public BigInteger DecodeUBigInt()
             {
-                byte[] bytes = ReadByteArray();
+                byte[] bytes = DecodeByteArray();
                 return bytes.ToUnsignedBigInteger();
             }
 
-            public Bloom ReadBloom()
+            public Bloom DecodeBloom()
             {
                 // TODO: check first bytes
-                byte[] bloomBytes = ReadByteArray();
+                byte[] bloomBytes = DecodeByteArray();
                 if (bloomBytes.Length == 0)
                 {
                     return null;
@@ -596,9 +602,7 @@ namespace Nethermind.Core.Encoding
                 return sequenceRlp;
             }
 
-//            return bytes.Length != 0 && bytes[0] == 1;
-
-            public bool ReadBool()
+            public bool DecodeBool()
             {
                 int prefix = ReadByte();
                 if (prefix <= 128)
@@ -657,39 +661,39 @@ namespace Nethermind.Core.Encoding
 
             public string DecodeString()
             {
-                byte[] bytes = ReadByteArray();
+                byte[] bytes = DecodeByteArray();
                 return System.Text.Encoding.UTF8.GetString(bytes);
             }
 
             public byte DecodeByte()
             {
-                byte[] bytes = ReadByteArray();
+                byte[] bytes = DecodeByteArray();
                 return bytes.Length == 0 ? (byte)0 : bytes[0];
             }
 
             public int DecodeInt()
             {
-                byte[] bytes = ReadByteArray();
+                byte[] bytes = DecodeByteArray();
                 return bytes.Length == 0 ? 0 : bytes.ToInt32();
             }
 
             public long DecodeLong()
             {
-                byte[] bytes = ReadByteArray();
+                byte[] bytes = DecodeByteArray();
                 return bytes.Length == 0 ? 0L : bytes.ToInt64();
             }
 
-            public byte[] ReadByteArray()
+            public byte[] DecodeByteArray()
             {
                 int prefix = ReadByte();
                 if (prefix == 0)
                 {
-                    return new byte[] {0};
+                    return new byte[] { 0 };
                 }
 
                 if (prefix < 128)
                 {
-                    return new[] {(byte)prefix};
+                    return new[] { (byte)prefix };
                 }
 
                 if (prefix == 128)

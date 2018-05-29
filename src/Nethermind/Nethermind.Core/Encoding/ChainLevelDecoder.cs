@@ -25,7 +25,7 @@ namespace Nethermind.Core.Encoding
         public ChainLevelInfo Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             long lastCheck = context.ReadSequenceLength() + context.Position;
-            bool hasMainChainBlock = context.ReadBool();
+            bool hasMainChainBlock = context.DecodeBool();
 
             List<BlockInfo> blockInfos = new List<BlockInfo>();
 

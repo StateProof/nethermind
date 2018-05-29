@@ -213,13 +213,13 @@ namespace Nethermind.Store
                     nodes[i] = DecodeChildNode(context);
                 }
 
-                byte[] value = context.ReadByteArray();
+                byte[] value = context.DecodeByteArray();
                 Branch branch = new Branch(nodes, value);
                 result = branch;
             }
             else if (numberOfItems == 2)
             {
-                HexPrefix key = HexPrefix.FromBytes(context.ReadByteArray());
+                HexPrefix key = HexPrefix.FromBytes(context.DecodeByteArray());
                 bool isExtension = key.IsExtension;
                 if (isExtension)
                 {
@@ -228,7 +228,7 @@ namespace Nethermind.Store
                 }
                 else
                 {
-                    Leaf leaf = new Leaf(key, context.ReadByteArray());
+                    Leaf leaf = new Leaf(key, context.DecodeByteArray());
                     result = leaf;
                 }
             }
@@ -254,7 +254,7 @@ namespace Nethermind.Store
                 return new NodeRef(keccakOrRlp);
             }
 
-            Keccak keccak = decoderContext.ReadKeccak();
+            Keccak keccak = decoderContext.DecodeKeccak();
             return keccak == null ? null : new NodeRef(new KeccakOrRlp(keccak));
         }
 

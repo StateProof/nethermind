@@ -26,10 +26,10 @@ namespace Nethermind.Core.Encoding
             //long checkValue = context.ReadSequenceLength() + context.Position;
 
             Account account = new Account();
-            account.Nonce = context.ReadUBigInt();
-            account.Balance = context.ReadUBigInt();
-            account.StorageRoot = context.ReadKeccak();
-            account.CodeHash = context.ReadKeccak();
+            account.Nonce = context.DecodeUBigInt();
+            account.Balance = context.DecodeUBigInt();
+            account.StorageRoot = context.DecodeKeccak();
+            account.CodeHash = context.DecodeKeccak();
 
             //if (!rlpBehaviors.HasFlag(RlpBehaviors.AllowExtraData))
             //{

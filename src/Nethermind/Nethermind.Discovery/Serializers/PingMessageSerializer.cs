@@ -57,10 +57,10 @@ namespace Nethermind.Discovery.Serializers
             var version = rlp.DecodeInt();
 
             rlp.ReadSequenceLength();
-            var source = GetAddress(rlp.ReadByteArray(), rlp.ReadByteArray());
+            var source = GetAddress(rlp.DecodeByteArray(), rlp.DecodeByteArray());
 
             rlp.ReadSequenceLength();
-            var destination = GetAddress(rlp.ReadByteArray(), rlp.ReadByteArray());
+            var destination = GetAddress(rlp.DecodeByteArray(), rlp.DecodeByteArray());
 
             var expireTime = rlp.DecodeLong();
 

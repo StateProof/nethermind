@@ -50,11 +50,11 @@ namespace Nethermind.Network.Rlpx.Handshake
             // TODO: this would not be compatible with future versions... ? if the length of prefixes changes
             Rlp.DecoderContext context = data.AsRlpContext();
             AuthEip8Message authMessage = new AuthEip8Message();
-            byte[] sigAllbytes = context.ReadByteArray();
+            byte[] sigAllbytes = context.DecodeByteArray();
             Signature signature = new Signature(sigAllbytes.Slice(0, 64), sigAllbytes[64]); // since Signature class is Ethereum style it expects V as the 64th byte, hence we use RecoveryID constructor
             authMessage.Signature = signature;
-            authMessage.PublicKey = new PublicKey(context.ReadByteArray());
-            authMessage.Nonce = context.ReadByteArray();
+            authMessage.PublicKey = new PublicKey(context.DecodeByteArray());
+            authMessage.Nonce = context.DecodeByteArray();
             int version = context.DecodeInt();
             Debug.Assert(version >= 4, $"Expected {nameof(AuthEip8Message.Version)} to be greater than 4");
             return authMessage;

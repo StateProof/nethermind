@@ -41,9 +41,9 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
             context.ReadSequenceLength();
             statusMessage.ProtocolVersion = context.DecodeByte();
             statusMessage.ChainId = context.DecodeInt();
-            statusMessage.TotalDifficulty = context.ReadUBigInt();
-            statusMessage.BestHash = context.ReadKeccak();
-            statusMessage.GenesisHash = context.ReadKeccak();
+            statusMessage.TotalDifficulty = context.DecodeUBigInt();
+            statusMessage.BestHash = context.DecodeKeccak();
+            statusMessage.GenesisHash = context.DecodeKeccak();
             return statusMessage;
         }
     }
