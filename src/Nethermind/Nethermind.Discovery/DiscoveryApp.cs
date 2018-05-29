@@ -307,22 +307,14 @@ namespace Nethermind.Discovery
 
         private async Task<bool> InitializeBootnodes()
         {
-            var bootNodes = _configurationProvider.BootNodes;
-            if (bootNodes == null || !bootNodes.Any())
-            {
-                if (_logger.IsWarnEnabled)
-                {
-                    _logger.Warn("No bootnodes specified in configuration");
-                    return false;
-                }
-            }
+            var bootNodes = _configurationProvider.NetworkNodes;
             var managers = new INodeLifecycleManager[bootNodes.Length];
             for (var i = 0; i < bootNodes.Length; i++)
             {
                 var bootnode = bootNodes[i];
-                var node = bootnode.Id == null
+                var node = bootnode.PublicKey == null
                     ? _nodeFactory.CreateNode(bootnode.Host, bootnode.Port)
-                    : _nodeFactory.CreateNode(bootnode.Id, bootnode.Host, bootnode.Port, true);
+                    : _nodeFactory.CreateNode(bootnode.PublicKey, bootnode.Host, bootnode.Port, true);
                 var manager = _discoveryManager.GetNodeLifecycleManager(node);
                 managers[i] = manager;
             }

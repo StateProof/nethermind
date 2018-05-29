@@ -112,7 +112,7 @@ namespace Nethermind.Discovery
         /// <summary>
         /// Boot nodes connection details
         /// </summary>
-        Node[] BootNodes { get; }
+        NetworkNode[] NetworkNodes { get; }
 
         /// <summary>
         /// Key Pass
