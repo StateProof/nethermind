@@ -20,7 +20,7 @@ namespace Nethermind.Core.Encoding
 {
     public class AccountDecoder : IRlpDecoder<Account>
     {
-        public Account Decode(NewRlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        public Account Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             context.ReadSequenceLength();
             //long checkValue = context.ReadSequenceLength() + context.Position;
@@ -37,6 +37,15 @@ namespace Nethermind.Core.Encoding
             //}
 
             return account;
+        }
+
+        public Rlp Encode(Account item, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        {
+                return Rlp.Encode(
+                    Rlp.Encode(item.Nonce),
+                    Rlp.Encode(item.Balance),
+                    Rlp.Encode(item.StorageRoot),
+                    Rlp.Encode(item.CodeHash));
         }
     }
 }
