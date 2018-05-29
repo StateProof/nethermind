@@ -26,7 +26,7 @@ namespace Nethermind.Core.Encoding
         public TransactionReceipt Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             TransactionReceipt receipt = new TransactionReceipt();
-            byte[] firstItem = context.ReadByteArray();
+            byte[] firstItem = context.DecodeByteArray();
             if (firstItem.Length == 1)
             {
                 receipt.StatusCode = firstItem[0];
@@ -36,8 +36,8 @@ namespace Nethermind.Core.Encoding
                 receipt.PostTransactionState = firstItem.Length == 0 ? null : new Keccak(firstItem);
             }
 
-            receipt.GasUsed = (long)context.ReadUBigInt(); // TODO: review
-            receipt.Bloom = context.ReadBloom();
+            receipt.GasUsed = (long)context.DecodeUBigInt(); // TODO: review
+            receipt.Bloom = context.DecodeBloom();
 
             long lastCheck = context.ReadSequenceLength() + context.Position;
             List<LogEntry> logEntries = new List<LogEntry>();

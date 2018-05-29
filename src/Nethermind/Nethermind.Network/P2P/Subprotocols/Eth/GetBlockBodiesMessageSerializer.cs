@@ -32,7 +32,7 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
         public GetBlockBodiesMessage Deserialize(byte[] bytes)
         {
             Rlp.DecoderContext context = bytes.AsRlpContext();
-            Keccak[] hashes = context.DecodeArray(ctx => context.ReadKeccak());
+            Keccak[] hashes = context.DecodeArray(ctx => context.DecodeKeccak());
             return new GetBlockBodiesMessage(hashes);
         }
     }

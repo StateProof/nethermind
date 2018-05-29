@@ -68,7 +68,7 @@ namespace Nethermind.Store
             }
 
             Rlp.DecoderContext rlp = value.AsRlpContext();
-            return rlp.ReadByteArray();
+            return rlp.DecodeByteArray();
         }
 
         public void Set(BigInteger index, byte[] value)

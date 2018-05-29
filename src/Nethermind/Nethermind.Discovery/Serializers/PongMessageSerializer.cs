@@ -51,7 +51,7 @@ namespace Nethermind.Discovery.Serializers
 
             var rlp = results.Data.AsRlpContext();
             
-            var token = rlp.ReadByteArray();
+            var token = rlp.DecodeByteArray();
             var expireTime = rlp.DecodeLong();
 
             var message = results.Message;

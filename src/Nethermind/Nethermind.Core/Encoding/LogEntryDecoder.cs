@@ -30,15 +30,15 @@ namespace Nethermind.Core.Encoding
                 throw new NotSupportedException("Not handling RlpBehaviours with log entries...");
             }
 
-            Address address = context.ReadAddress();
+            Address address = context.DecodeAddress();
             long sequenceLength = context.ReadSequenceLength();
             Keccak[] topics = new Keccak[sequenceLength / 33];
             for (int i = 0; i < topics.Length; i++)
             {
-                topics[i] = context.ReadKeccak();
+                topics[i] = context.DecodeKeccak();
             }
 
-            byte[] data = context.ReadByteArray();
+            byte[] data = context.DecodeByteArray();
 
             return new LogEntry(address, data, topics);
         }

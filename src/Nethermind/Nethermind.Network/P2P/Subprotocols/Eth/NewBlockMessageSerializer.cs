@@ -37,7 +37,7 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
             NewBlockMessage message = new NewBlockMessage();
             context.ReadSequenceLength();
             message.Block = Rlp.Decode<Block>(context);
-            message.TotalDifficulty = context.ReadUBigInt();
+            message.TotalDifficulty = context.DecodeUBigInt();
             return message;
         }
     }

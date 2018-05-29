@@ -43,7 +43,7 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
             (Keccak, BigInteger)[] blockHashes = context.DecodeArray(ctx =>
             {
                 ctx.ReadSequenceLength();
-                return (ctx.ReadKeccak(), ctx.ReadUBigInt());
+                return (ctx.DecodeKeccak(), ctx.DecodeUBigInt());
             });
             return new NewBlockHashesMessage(blockHashes);
         }
