@@ -51,16 +51,18 @@ namespace Nethermind.Discovery.Serializers
 
         public PingMessage Deserialize(byte[] msg)
         {
-            var results = Deserialize<PingMessage>(msg);
+            var results = PrepareForDeserialization<PingMessage>(msg);
             
             var rlp = results.Data.AsRlpContext();
+            rlp.ReadSequenceLength();
             var version = rlp.DecodeInt();
 
             rlp.ReadSequenceLength();
-            var source = GetAddress(rlp.DecodeByteArray(), rlp.DecodeByteArray());
-
+            var source = GetAddress(rlp.DecodeByteArray(), rlp.DecodeInt());
+            rlp.DecodeInt(); // UDP port
             rlp.ReadSequenceLength();
-            var destination = GetAddress(rlp.DecodeByteArray(), rlp.DecodeByteArray());
+            var destination = GetAddress(rlp.DecodeByteArray(), rlp.DecodeInt());
+            rlp.DecodeInt(); // UDP port
 
             var expireTime = rlp.DecodeLong();
 

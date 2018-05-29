@@ -52,6 +52,7 @@ namespace Nethermind.Network.Rlpx.Handshake
         {
             Rlp.DecoderContext context = bytes.AsRlpContext();
             AckEip8Message authEip8Message = new AckEip8Message();
+            context.ReadSequenceLength();
             authEip8Message.EphemeralPublicKey = new PublicKey(context.DecodeByteArray());
             authEip8Message.Nonce = context.DecodeByteArray();
             // TODO: check the version? /Postel

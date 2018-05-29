@@ -255,6 +255,11 @@ namespace Nethermind.Core.Encoding
 
         public static Rlp Encode(string s)
         {
+            if (s == null)
+            {
+                return OfEmptyByteArray;
+            }
+
             return Encode(System.Text.Encoding.ASCII.GetBytes(s));
         }
 

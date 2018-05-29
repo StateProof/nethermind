@@ -50,8 +50,8 @@ namespace Nethermind.Network.Rlpx
             }
 
             Rlp.DecoderContext headerBodyItems = input.Slice(3, 13).AsRlpContext();
-            headerBodyItems.ReadSequenceLength();
-            int numberOfItems = headerBodyItems.ReadNumberOfItemsRemaining();
+            int headerDataEnd = headerBodyItems.ReadSequenceLength() + headerBodyItems.Position;
+            int numberOfItems = headerBodyItems.ReadNumberOfItemsRemaining(headerDataEnd);
             int protocolType = headerBodyItems.DecodeInt(); // not needed - adaptive IDs
             int? contextId = numberOfItems > 1 ? headerBodyItems.DecodeInt() : (int?)null;
             int? totalPacketSize = numberOfItems > 2 ? headerBodyItems.DecodeInt() : (int?)null;
@@ -124,9 +124,8 @@ namespace Nethermind.Network.Rlpx
 
         private static int GetPacketType(byte[] input)
         {
-            Rlp packetTypeRlp = new Rlp(input.Slice(32, 1));
-            int packetType = Rlp.Decode<byte[]>(packetTypeRlp).ToInt32();
-            return packetType;
+            int packetTypeRlp = input[32];
+            return packetTypeRlp == 128 ? 0 : packetTypeRlp;
         }
     }
 }

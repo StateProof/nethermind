@@ -48,21 +48,18 @@ namespace Nethermind.Discovery.Serializers
 
         public FindNodeMessage Deserialize(byte[] msg)
         {
-            throw new NotImplementedException();
+            var results = PrepareForDeserialization<FindNodeMessage>(msg);
+            Rlp.DecoderContext context = results.Data.AsRlpContext();
 
-            //var results = Deserialize<FindNodeMessage>(msg);
+            context.ReadSequenceLength();
+            var searchedNodeId = context.DecodeByteArray();
+            var expireTime = context.DecodeLong();
 
-            //var rlp = new Rlp(results.Data);
-            //DecodedRlp raw = Rlp.Decode(rlp, RlpBehaviors.AllowExtraData);
+            var message = results.Message;
+            message.SearchedNodeId = searchedNodeId;
+            message.ExpirationTime = expireTime;
 
-            //var searchedNodeId = raw.GetBytes(0);
-            //var expireTime = raw.GetBytes(1).ToInt64();
-
-            //var message = results.Message;
-            //message.SearchedNodeId = searchedNodeId;
-            //message.ExpirationTime = expireTime;
-
-            //return message;
+            return message;
         }
     }
 }
