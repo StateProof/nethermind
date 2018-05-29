@@ -22,7 +22,7 @@ namespace Nethermind.Core.Encoding
 {
     public class NetworkNodeDecoder : IRlpDecoder<NetworkNode>
     {
-        public NetworkNode Decode(NewRlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        public NetworkNode Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             context.ReadSequenceLength();
 
@@ -34,6 +34,17 @@ namespace Nethermind.Core.Encoding
 
             var networkNode = new NetworkNode(publicKey, ip != string.Empty ? ip : null, port, description != string.Empty ? description : null, reputation);
             return networkNode;
+        }
+
+        public Rlp Encode(NetworkNode item, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        {
+            Rlp[] elements = new Rlp[5];
+            elements[0] = Rlp.Encode(item.PublicKey.Bytes);
+            elements[1] = Rlp.Encode(item.Host);
+            elements[2] = Rlp.Encode(item.Port);
+            elements[3] = Rlp.Encode(item.Description);
+            elements[4] = Rlp.Encode(item.Reputation);
+            return Rlp.Encode(elements);
         }
     }
 }

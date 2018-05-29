@@ -16,6 +16,7 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Numerics;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Extensions;
@@ -24,7 +25,7 @@ namespace Nethermind.Core.Encoding
 {
     public class TransactionDecoder : IRlpDecoder<Transaction>
     {
-        public Transaction Decode(NewRlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        public Transaction Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             byte[] transactionSequence = context.ReadSequenceRlp(); // TODO: span
             context.Position -= transactionSequence.Length;
@@ -82,6 +83,11 @@ namespace Nethermind.Core.Encoding
             }
 
             return transaction;
+        }
+
+        public Rlp Encode(Transaction item, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        {
+            return Rlp.Encode(item, false);
         }
     }
 }

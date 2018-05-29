@@ -49,10 +49,12 @@ namespace Nethermind.Network.Rlpx
                 _logger.Trace("Merging frames");
             }
 
-            DecodedRlp headerBodyItems = Rlp.Decode(new Rlp(input.Slice(3, 13)), RlpBehaviors.AllowExtraData);
-            // int protocolType = headerBodyItems.GetInt(0); // not needed - adaptive IDs
-            int? contextId = headerBodyItems.Length > 1 ? headerBodyItems.GetInt(1) : (int?)null;
-            int? totalPacketSize = headerBodyItems.Length > 2 ? headerBodyItems.GetInt(2) : (int?)null;
+            Rlp.DecoderContext headerBodyItems = input.Slice(3, 13).AsRlpContext();
+            headerBodyItems.ReadSequenceLength();
+            int numberOfItems = headerBodyItems.ReadNumberOfItemsRemaining();
+            int protocolType = headerBodyItems.DecodeInt(); // not needed - adaptive IDs
+            int? contextId = numberOfItems > 1 ? headerBodyItems.DecodeInt() : (int?)null;
+            int? totalPacketSize = numberOfItems > 2 ? headerBodyItems.DecodeInt() : (int?)null;
 
             bool isChunked = totalPacketSize.HasValue
                              || contextId.HasValue && _currentSizes.ContainsKey(contextId.Value);

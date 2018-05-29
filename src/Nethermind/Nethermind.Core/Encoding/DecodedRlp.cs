@@ -19,13 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Numerics;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Extensions;
 
 namespace Nethermind.Core.Encoding
 {
+    [Obsolete("to be removed")]
     public class DecodedRlp
     {
         public List<object> Items { get; }
@@ -141,7 +141,7 @@ namespace Nethermind.Core.Encoding
         // TODO: refactor RLP
         public T GetComplexObject<T>(int index)
         {
-            return Rlp.Decode<T>(GetSequence(index));
+            return OldRlp.Decode<T>(GetSequence(index));
         }
 
         public T[] GetComplexObjectArray<T>(int index)
@@ -150,7 +150,7 @@ namespace Nethermind.Core.Encoding
             T[] result = new T[sequence.Items.Count];
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = Rlp.Decode<T>(sequence.GetSequence(i));
+                result[i] = OldRlp.Decode<T>(sequence.GetSequence(i));
             }
 
             return result;

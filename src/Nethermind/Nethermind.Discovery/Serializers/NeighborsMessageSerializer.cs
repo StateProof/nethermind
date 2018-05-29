@@ -16,6 +16,7 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nethermind.Core;
@@ -68,52 +69,53 @@ namespace Nethermind.Discovery.Serializers
 
         public NeighborsMessage Deserialize(byte[] msg)
         {
-            var results = Deserialize<NeighborsMessage>(msg);
+            throw new NotImplementedException();
+            //var results = Deserialize<NeighborsMessage>(msg);
 
-            var rlp = new Rlp(results.Data);
-            var decodedRaw = Rlp.Decode(rlp, RlpBehaviors.AllowExtraData);
+            //var rlp = results.Data.AsRlpContext();
 
-            var nodes = DeserializeNodes(decodedRaw);
+            //var nodes = DeserializeNodes(decodedRaw);
 
-            var expireTime = decodedRaw.GetBytes(1).ToInt64();
-            var message = results.Message;
-            message.Nodes = nodes.ToArray();
-            message.ExpirationTime = expireTime;
+            //var expireTime = decodedRaw.GetBytes(1).ToInt64();
+            //var message = results.Message;
+            //message.Nodes = nodes.ToArray();
+            //message.ExpirationTime = expireTime;
 
-            return message;
+            //return message;
         }
 
-        private List<Node> DeserializeNodes(DecodedRlp decodedRaw)
+        private List<Node> DeserializeNodes(Rlp.DecoderContext context)
         {
-            if (!(decodedRaw.Items[0] is DecodedRlp))
+            if (!context.IsSequenceNext())
             {
                 return new List<Node>();
             }
 
-            var decodedRlp = (DecodedRlp)decodedRaw.Items[0];
-            var decodedNodes = decodedRlp != null
-                ? (decodedRlp.IsSequence ? decodedRlp.Items : new List<object> { decodedRlp.SingleItem })
-                : new List<object>();
+            throw new NotImplementedException();
+            //var decodedRlp = (DecodedRlp)decodedRaw.Items[0];
+            //var decodedNodes = decodedRlp != null
+            //    ? (decodedRlp.IsSequence ? decodedRlp.Items : new List<object> { decodedRlp.SingleItem })
+            //    : new List<object>();
 
-            var nodes = new List<Node>();
-            for (var i = 0; i < decodedNodes.Count; i++)
-            {
-                DecodedRlp nodeRaw = (DecodedRlp) decodedNodes[i];
-                if (i == 0 && !nodeRaw.IsSequence && ((byte[]) nodeRaw.SingleItem)[0] == OffsetShortList)
-                {
-                    break;
-                }
+            //var nodes = new List<Node>();
+            //for (var i = 0; i < decodedNodes.Count; i++)
+            //{
+            //    DecodedRlp nodeRaw = (DecodedRlp) decodedNodes[i];
+            //    if (i == 0 && !nodeRaw.IsSequence && ((byte[]) nodeRaw.SingleItem)[0] == OffsetShortList)
+            //    {
+            //        break;
+            //    }
 
-                var address = GetAddress(nodeRaw.GetBytes(0), nodeRaw.GetBytes(1));
-                //TODO confirm it is correct - based on EthereumJ
-                var idRaw = nodeRaw.Length > 3 ? nodeRaw.GetBytes(3) : nodeRaw.GetBytes(2);
-                byte[] id = idRaw;
+            //    var address = GetAddress(nodeRaw.GetBytes(0), nodeRaw.GetBytes(1));
+            //    //TODO confirm it is correct - based on EthereumJ
+            //    var idRaw = nodeRaw.Length > 3 ? nodeRaw.GetBytes(3) : nodeRaw.GetBytes(2);
+            //    byte[] id = idRaw;
 
-                var node = NodeFactory.CreateNode(new PublicKey(id), address);
-                nodes.Add(node);
-            }
+            //    var node = NodeFactory.CreateNode(new PublicKey(id), address);
+            //    nodes.Add(node);
+            //}
 
-            return nodes;
+            //return nodes;
         }
     }
 }

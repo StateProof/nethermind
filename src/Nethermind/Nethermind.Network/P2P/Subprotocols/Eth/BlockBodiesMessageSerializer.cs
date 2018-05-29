@@ -16,6 +16,7 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Linq;
 using Nethermind.Core;
 using Nethermind.Core.Encoding;
@@ -33,34 +34,35 @@ namespace Nethermind.Network.P2P.Subprotocols.Eth
 
         public BlockBodiesMessage Deserialize(byte[] bytes)
         {   
-            DecodedRlp decodedRlp = Rlp.Decode(new Rlp(bytes));
-            (Transaction[] Transactions, BlockHeader[] Ommers)[] bodies = new (Transaction[] Transactions, BlockHeader[] Ommers)[decodedRlp.Length];
-            for (int i = 0; i < bodies.Length; i++)
-            {   
-                DecodedRlp bodyRlp = decodedRlp.GetSequence(i);
-                DecodedRlp transactionsRlp = bodyRlp.GetSequence(0);
-                DecodedRlp ommersRlp = bodyRlp.GetSequence(1);
+            throw new NotImplementedException();
+            //DecodedRlp decodedRlp = OldRlp.Decode(new Rlp(bytes));
+            //(Transaction[] Transactions, BlockHeader[] Ommers)[] bodies = new (Transaction[] Transactions, BlockHeader[] Ommers)[decodedRlp.Length];
+            //for (int i = 0; i < bodies.Length; i++)
+            //{   
+            //    DecodedRlp bodyRlp = decodedRlp.GetSequence(i);
+            //    DecodedRlp transactionsRlp = bodyRlp.GetSequence(0);
+            //    DecodedRlp ommersRlp = bodyRlp.GetSequence(1);
 
-                Transaction[] transactions = new Transaction[transactionsRlp.Length];
-                BlockHeader[] ommers = new BlockHeader[ommersRlp.Length];
+            //    Transaction[] transactions = new Transaction[transactionsRlp.Length];
+            //    BlockHeader[] ommers = new BlockHeader[ommersRlp.Length];
 
-                for (int j = 0; j < transactions.Length; j++)
-                {
-                    transactions[j] = Rlp.Decode<Transaction>(transactionsRlp.GetSequence(j));
-                }
+            //    for (int j = 0; j < transactions.Length; j++)
+            //    {
+            //        transactions[j] = Rlp.Decode<Transaction>(transactionsRlp.GetSequence(j));
+            //    }
 
-                for (int j = 0; j < ommers.Length; j++)
-                {
-                    ommers[j] = Rlp.Decode<BlockHeader>(ommersRlp.GetSequence(j));
-                }
+            //    for (int j = 0; j < ommers.Length; j++)
+            //    {
+            //        ommers[j] = Rlp.Decode<BlockHeader>(ommersRlp.GetSequence(j));
+            //    }
 
-                bodies[i].Transactions = transactions;
-                bodies[i].Ommers = ommers;
-            }
+            //    bodies[i].Transactions = transactions;
+            //    bodies[i].Ommers = ommers;
+            //}
 
-            BlockBodiesMessage message = new BlockBodiesMessage();
-            message.Bodies = bodies;
-            return message;
+            //BlockBodiesMessage message = new BlockBodiesMessage();
+            //message.Bodies = bodies;
+            //return message;
         }
     }
 }

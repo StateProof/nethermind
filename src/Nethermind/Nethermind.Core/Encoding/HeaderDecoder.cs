@@ -24,7 +24,7 @@ namespace Nethermind.Core.Encoding
 {
     public class HeaderDecoder : IRlpDecoder<BlockHeader>
     {
-        public BlockHeader Decode(NewRlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
+        public BlockHeader Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
             byte[] headerRlp = context.ReadSequenceRlp();
             context.Position -= headerRlp.Length;
@@ -72,6 +72,33 @@ namespace Nethermind.Core.Encoding
             blockHeader.Nonce = (ulong)nonce;
             blockHeader.Hash = BlockHeader.CalculateHash(new Rlp(headerRlp));
             return blockHeader;
+        }
+
+        public Rlp Encode(BlockHeader item, RlpBehaviors behaviors = RlpBehaviors.None)
+        {
+            bool withMixHashAndNonce = !behaviors.HasFlag(RlpBehaviors.ExcludeBlockMixHashAndNonce);
+            int numberOfElements = withMixHashAndNonce ? 15 : 13;
+            Rlp[] elements = new Rlp[numberOfElements];
+            elements[0] = Rlp.Encode(item.ParentHash);
+            elements[1] = Rlp.Encode(item.OmmersHash);
+            elements[2] = Rlp.Encode(item.Beneficiary);
+            elements[3] = Rlp.Encode(item.StateRoot);
+            elements[4] = Rlp.Encode(item.TransactionsRoot);
+            elements[5] = Rlp.Encode(item.ReceiptsRoot);
+            elements[6] = Rlp.Encode(item.Bloom);
+            elements[7] = Rlp.Encode(item.Difficulty);
+            elements[8] = Rlp.Encode(item.Number);
+            elements[9] = Rlp.Encode(item.GasLimit);
+            elements[10] = Rlp.Encode(item.GasUsed);
+            elements[11] = Rlp.Encode(item.Timestamp);
+            elements[12] = Rlp.Encode(item.ExtraData);
+            if (withMixHashAndNonce)
+            {
+                elements[13] = Rlp.Encode(item.MixHash);
+                elements[14] = Rlp.Encode(item.Nonce);
+            }
+
+            return Rlp.Encode(elements);
         }
     }
 }

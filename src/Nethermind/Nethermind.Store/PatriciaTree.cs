@@ -199,7 +199,7 @@ namespace Nethermind.Store
         internal static Node RlpDecode(Rlp bytes)
         {
             Metrics.TreeNodeRlpDecodings++;
-            NewRlp.DecoderContext context = bytes.Bytes.AsRlpContext();
+            Rlp.DecoderContext context = bytes.Bytes.AsRlpContext();
 
             context.ReadSequenceLength();
             int numberOfItems = context.ReadNumberOfItemsRemaining();
@@ -240,7 +240,7 @@ namespace Nethermind.Store
             return result;
         }
 
-        private static NodeRef DecodeChildNode(NewRlp.DecoderContext decoderContext)
+        private static NodeRef DecodeChildNode(Rlp.DecoderContext decoderContext)
         {
             if (decoderContext.IsSequenceNext())
             {
