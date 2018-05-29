@@ -30,8 +30,8 @@ namespace Nethermind.Core.Encoding
             byte[] transactionSequence = context.ReadSequenceRlp(); // TODO: span
             context.Position -= transactionSequence.Length;
 
-            long transactionLength = context.ReadSequenceLength();
-            long lastCheck = context.Position + transactionLength;
+            int transactionLength = context.ReadSequenceLength();
+            int lastCheck = context.Position + transactionLength;
             Transaction transaction = new Transaction();
             transaction.Nonce = context.DecodeUBigInt();
             transaction.GasPrice = context.DecodeUBigInt();

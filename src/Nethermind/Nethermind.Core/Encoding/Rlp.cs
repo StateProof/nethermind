@@ -222,6 +222,7 @@ namespace Nethermind.Core.Encoding
             return EncodeNumber(value);
         }
 
+        // TODO: nonces only
         public static Rlp Encode(ulong value)
         {
             return Encode(value.ToBigEndianByteArray());
@@ -280,37 +281,39 @@ namespace Nethermind.Core.Encoding
             return new Rlp(Extensions.Bytes.Concat(prefix, serializedLength, input));
         }
 
-        public static byte[] SerializeLength(long value)
+        public static byte[] SerializeLength(int value)
         {
-            const int maxResultLength = 8;
-            byte[] bytes = new byte[maxResultLength];
-
-            bytes[0] = (byte)(value >> 56);
-            bytes[1] = (byte)(value >> 48);
-            bytes[2] = (byte)(value >> 40);
-            bytes[3] = (byte)(value >> 32);
-            bytes[3] = (byte)(value >> 32);
-            bytes[4] = (byte)(value >> 24);
-            bytes[5] = (byte)(value >> 16);
-            bytes[6] = (byte)(value >> 8);
-            bytes[7] = (byte)value;
-
-            int resultLength = maxResultLength;
-            for (int i = 0; i < maxResultLength; i++)
+            if (value < 1 << 8)
             {
-                if (bytes[i] == 0)
-                {
-                    resultLength--;
-                }
-                else
-                {
-                    break;
-                }
+                return new[] { (byte)value };
             }
 
-            byte[] result = new byte[resultLength];
-            Buffer.BlockCopy(bytes, maxResultLength - resultLength, result, 0, resultLength);
-            return result;
+            if (value < 1 << 16)
+            {
+                return new[]
+                {
+                    (byte)(value >> 8),
+                    (byte)value,
+                };
+            }
+
+            if (value < 1 << 24)
+            {
+                return new[]
+                {
+                    (byte)(value >> 16),
+                    (byte)(value >> 8),
+                    (byte)value,
+                };
+            }
+
+            return new[]
+            {
+                (byte)(value >> 24),
+                (byte)(value >> 16),
+                (byte)(value >> 8),
+                (byte)value
+            };
         }
 
         public static Rlp Encode(Bloom bloom)
@@ -451,7 +454,7 @@ namespace Nethermind.Core.Encoding
                     else
                     {
                         Position--;
-                        int sequenceLength = (int)ReadSequenceLength();
+                        int sequenceLength = ReadSequenceLength();
                         Position += sequenceLength;
                     }
 
@@ -532,7 +535,7 @@ namespace Nethermind.Core.Encoding
                 return bytes;
             }
 
-            public void Check(long nextCheck)
+            public void Check(int nextCheck)
             {
                 if (Position != nextCheck)
                 {
@@ -722,13 +725,13 @@ namespace Nethermind.Core.Encoding
                         throw new RlpException("Expected length of lenth less or equal 4");
                     }
 
-                    long length = DeserializeLength(lengthOfLength);
+                    int length = DeserializeLength(lengthOfLength);
                     if (length < 56)
                     {
                         throw new RlpException("Expected length greater or equal 56 and was {length}");
                     }
 
-                    byte[] buffer = Read((int)length);
+                    byte[] buffer = Read(length);
                     return buffer;
                 }
 

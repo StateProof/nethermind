@@ -29,8 +29,8 @@ namespace Nethermind.Core.Encoding
             byte[] headerRlp = context.ReadSequenceRlp();
             context.Position -= headerRlp.Length;
 
-            long headerSequenceLength = context.ReadSequenceLength();
-            long headerCheck = context.Position + headerSequenceLength;
+            int headerSequenceLength = context.ReadSequenceLength();
+            int headerCheck = context.Position + headerSequenceLength;
 
             Keccak parentHash = context.DecodeKeccak();
             Keccak ommersHash = context.DecodeKeccak();

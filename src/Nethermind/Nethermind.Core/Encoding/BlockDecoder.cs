@@ -24,13 +24,13 @@ namespace Nethermind.Core.Encoding
     {
         public Block Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
-            long sequenceLength = context.ReadSequenceLength();
-            long blockCheck = context.Position + sequenceLength;
+            int sequenceLength = context.ReadSequenceLength();
+            int blockCheck = context.Position + sequenceLength;
 
             BlockHeader header = Rlp.Decode<BlockHeader>(context);
 
-            long transactionsSequenceLength = context.ReadSequenceLength();
-            long transactionsCheck = context.Position + transactionsSequenceLength;
+            int transactionsSequenceLength = context.ReadSequenceLength();
+            int transactionsCheck = context.Position + transactionsSequenceLength;
             List<Transaction> transactions = new List<Transaction>();
             while (context.Position < transactionsCheck)
             {
@@ -39,8 +39,8 @@ namespace Nethermind.Core.Encoding
 
             context.Check(transactionsCheck);
 
-            long ommersSequenceLength = context.ReadSequenceLength();
-            long ommersCheck = context.Position + ommersSequenceLength;
+            int ommersSequenceLength = context.ReadSequenceLength();
+            int ommersCheck = context.Position + ommersSequenceLength;
             List<BlockHeader> ommerHeaders = new List<BlockHeader>();
             while (context.Position < ommersCheck)
             {

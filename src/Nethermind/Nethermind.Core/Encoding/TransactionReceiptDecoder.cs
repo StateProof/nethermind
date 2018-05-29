@@ -39,7 +39,7 @@ namespace Nethermind.Core.Encoding
             receipt.GasUsed = (long)context.DecodeUBigInt(); // TODO: review
             receipt.Bloom = context.DecodeBloom();
 
-            long lastCheck = context.ReadSequenceLength() + context.Position;
+            int lastCheck = context.ReadSequenceLength() + context.Position;
             List<LogEntry> logEntries = new List<LogEntry>();
 
             while (context.Position < lastCheck)
