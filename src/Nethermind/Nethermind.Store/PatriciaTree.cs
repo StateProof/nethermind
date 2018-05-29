@@ -25,7 +25,6 @@ using Nethermind.Core.Extensions;
 
 namespace Nethermind.Store
 {
-    // TODO: I guess it is a very slow and Keccak-heavy implementation, the first one to pass tests
     [DebuggerDisplay("{RootHash}")]
     public class PatriciaTree
     {

@@ -22,7 +22,7 @@ namespace Nethermind.Core.Encoding
     {
         public BlockInfo Decode(Rlp.DecoderContext context, RlpBehaviors rlpBehaviors = RlpBehaviors.None)
         {
-            long lastCheck = context.ReadSequenceLength() + context.Position;
+            int lastCheck = context.ReadSequenceLength() + context.Position;
 
             BlockInfo blockInfo = new BlockInfo();
             blockInfo.BlockHash = context.DecodeKeccak();
