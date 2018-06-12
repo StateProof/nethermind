@@ -26,34 +26,36 @@ using Nethermind.Core.Extensions;
 
 namespace Nethermind.Store
 {
-    internal class Node
+    internal class TrieNode
     {
-        public Node(NodeType nodeType)
+        private bool _isDirty;
+
+        public TrieNode(NodeType nodeType)
         {
             NodeType = nodeType;
             if (NodeType == NodeType.Extension)
             {
-                Children = new Node[1];
+                Children = new TrieNode[1];
             }
             else if (NodeType == NodeType.Branch)
             {
-                Children = new Node[16];
+                Children = new TrieNode[16];
             }
         }
 
-        public Node(NodeType nodeType, Keccak keccak)
+        public TrieNode(NodeType nodeType, Keccak keccak)
         {
             NodeType = nodeType;
             Keccak = keccak;
         }
 
-        public Node(NodeType nodeType, Rlp rlp)
+        public TrieNode(NodeType nodeType, Rlp rlp)
         {
             NodeType = nodeType;
             FullRlp = rlp;
         }
 
-        public Node[] Children { get; set; }
+        public TrieNode[] Children { get; set; }
 
         public bool IsValidWithOneNodeLess
         {
@@ -75,7 +77,20 @@ namespace Nethermind.Store
         }
 
         //public bool IsDirty => Keccak == null && FullRlp.Length >= 32; // possibly?
-        public bool IsDirty { get; set; }
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set
+            {
+                if (value)
+                {
+                    Keccak = null;
+                }
+
+                _isDirty = value;
+            }
+        }
+
         public Keccak Keccak { get; set; }
         public Rlp FullRlp { get; private set; }
         public NodeType NodeType { get; set; }
@@ -84,7 +99,7 @@ namespace Nethermind.Store
         public bool IsBranch => NodeType == NodeType.Branch;
         public bool IsExtension => NodeType == NodeType.Extension;
 
-        private static Node DecodeChildNode(Rlp.DecoderContext decoderContext)
+        private static TrieNode DecodeChildNode(Rlp.DecoderContext decoderContext)
         {
             if (decoderContext.IsSequenceNext())
             {
@@ -94,11 +109,11 @@ namespace Nethermind.Store
                     throw new InvalidOperationException();
                 }
 
-                return new Node(NodeType.Unknown, new Rlp(sequenceBytes));
+                return new TrieNode(NodeType.Unknown, new Rlp(sequenceBytes));
             }
 
             Keccak keccak = decoderContext.DecodeKeccak();
-            return keccak == null ? null : new Node(NodeType.Unknown, keccak);
+            return keccak == null ? null : new TrieNode(NodeType.Unknown, keccak);
         }
 
         public void ResolveNode(PatriciaTree tree)
@@ -123,7 +138,7 @@ namespace Nethermind.Store
 
             if (numberOfItems == 17)
             {
-                Children = new Node[16];
+                Children = new TrieNode[16];
                 for (int i = 0; i < 16; i++)
                 {
                     Children[i] = DecodeChildNode(context);
@@ -134,7 +149,7 @@ namespace Nethermind.Store
             }
             else if (numberOfItems == 2)
             {
-                Children = new Node[1];
+                Children = new TrieNode[1];
                 HexPrefix key = HexPrefix.FromBytes(context.DecodeByteArray());
                 bool isExtension = key.IsExtension;
                 if (isExtension)
@@ -163,7 +178,7 @@ namespace Nethermind.Store
                 return;
             }
 
-            if (FullRlp == null)
+            if (FullRlp == null || IsDirty)
             {
                 FullRlp = PatriciaTree.RlpEncode(this);
             }
