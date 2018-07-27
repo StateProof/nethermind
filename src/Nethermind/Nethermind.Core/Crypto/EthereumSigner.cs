@@ -46,7 +46,8 @@ namespace Nethermind.Core.Crypto
         
         public void Sign(PrivateKey privateKey, Transaction transaction, BigInteger blockNumber)
         {
-            _logger?.Debug($"Signing transaction: {transaction.Value} to {transaction.To}");
+            if(_logger.IsDebugEnabled) _logger.Debug($"Signing transaction: {transaction.Value} to {transaction.To}");
+            
             bool isEip155Enabled = _specProvider.GetSpec(blockNumber).IsEip155Enabled;
             Keccak hash = Keccak.Compute(Rlp.Encode(transaction, true, isEip155Enabled, _chainIdValue));
             transaction.Signature = Sign(privateKey, hash);
@@ -55,7 +56,7 @@ namespace Nethermind.Core.Crypto
                 transaction.Signature.V = (byte)(transaction.Signature.V + 8 + 2 * _chainIdValue);
             }
             
-            _logger?.Debug("Transaction signed");
+            if(_logger.IsDebugEnabled) _logger.Debug("Transaction signed");
         }
 
         public void RecoverAddresses(Block block)

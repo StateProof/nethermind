@@ -200,7 +200,7 @@ namespace Nethermind.Mining
             Keccak headerHashed = GetTruncatedHash(header);
             (byte[] _, byte[] result) = Hashimoto(fullSize, cache, headerHashed, header.MixHash, header.Nonce);
 
-            BigInteger threshold = BigInteger.Divide(BigInteger.Pow(2, 256), header.Difficulty);
+            BigInteger threshold = BigInteger.Divide(_2To256, header.Difficulty);
             return IsLessThanTarget(result, threshold);
         }
 

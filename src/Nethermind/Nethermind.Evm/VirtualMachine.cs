@@ -590,9 +590,6 @@ namespace Nethermind.Evm
 
             void PushSignedInt(BigInteger value, Span<byte> stack)
             {
-                // TODO: test byte[33]
-                BigInteger a = BigInteger.Pow(2, 256);
-                BigInteger b = BigInteger.Pow(2, 255);
                 Span<byte> target = stack.Slice(stackHead * 32, 32);
                 int bytesToWrite = value.GetByteCount(false);
                 bool treatAsUnsigned = bytesToWrite == 33;

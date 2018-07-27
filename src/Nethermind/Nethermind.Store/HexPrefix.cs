@@ -48,8 +48,8 @@ namespace Nethermind.Store
             {
                 output[i / 2 + 1] =
                     Path.Length % 2 == 0
-                        ? (byte)(16 * Path[i] + Path[i + 1])
-                        : (byte)(16 * Path[i + 1] + Path[i + 2]);
+                        ? (byte)(0x10 * Path[i] + Path[i + 1])
+                        : (byte)(0x10 * Path[i + 1] + Path[i + 2]);
             }
 
             return output;
@@ -57,8 +57,8 @@ namespace Nethermind.Store
 
         public static HexPrefix FromBytes(byte[] bytes)
         {
-            HexPrefix hexPrefix = new HexPrefix(bytes[0] >= 32);
-            bool isEven = (bytes[0] & 16) == 0;
+            HexPrefix hexPrefix = new HexPrefix(bytes[0] >= 0x20);
+            bool isEven = (bytes[0] & 0x10) == 0;
             int nibblesCount = bytes.Length * 2 - (isEven ? 2 : 1);
             hexPrefix.Path = new byte[nibblesCount];
             for (int i = 0; i < nibblesCount; i++)
@@ -66,11 +66,11 @@ namespace Nethermind.Store
                 hexPrefix.Path[i] =
                     isEven
                         ? i % 2 == 0
-                            ? (byte)((bytes[1 + i / 2] & 240) / 16)
-                            : (byte)(bytes[1 + i / 2] & 15)
+                            ? (byte)((bytes[1 + i / 2] & 0xf0) / 0x10)
+                            : (byte)(bytes[1 + i / 2] & 0x0f)
                         : i % 2 == 0
-                            ? (byte)(bytes[i / 2] & 15)
-                            : (byte)((bytes[1 + i / 2] & 240) / 16);
+                            ? (byte)(bytes[i / 2] & 0x0f)
+                            : (byte)((bytes[1 + i / 2] & 0xf0) / 0x10);
             }
 
             return hexPrefix;

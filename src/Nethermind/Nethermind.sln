@@ -117,6 +117,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nethermind", "Nethermind", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{E627BFEF-ABD3-4B8F-A9AC-204251AE440C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workshop", "Workshop", "{382886C4-0D6B-4A5E-A530-E3D64756F878}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nethermind.Workshop.RlpPlayground", "Nethermind.Workshop.RlpPlayground\Nethermind.Workshop.RlpPlayground.csproj", "{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -291,6 +295,10 @@ Global
 		{318B0825-0389-4A00-9448-551CA3AF7E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{318B0825-0389-4A00-9448-551CA3AF7E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{318B0825-0389-4A00-9448-551CA3AF7E45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -326,6 +334,7 @@ Global
 		{318B0825-0389-4A00-9448-551CA3AF7E45} = {1564814A-27F8-40A3-943E-8E950D5EE17D}
 		{DDCD43A0-C84B-474A-A41A-31112376EF29} = {4019B82F-1104-4D2C-9F96-05FD7D3575E8}
 		{1564814A-27F8-40A3-943E-8E950D5EE17D} = {4019B82F-1104-4D2C-9F96-05FD7D3575E8}
+		{ED49FC9C-BF3D-4BEB-8324-E0978127C3DF} = {382886C4-0D6B-4A5E-A530-E3D64756F878}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {092CA5E3-6180-4ED7-A3CB-9B57FAC2AA85}

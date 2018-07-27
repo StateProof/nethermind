@@ -137,7 +137,7 @@ namespace Nethermind.Core.Encoding
                 return Encode(rlpSequence);
             }
 
-            throw new RlpException($"{nameof(Rlp)} does not support decoding {typeof(T).Name}");
+            throw new RlpException($"{nameof(Rlp)} does not support encoding {typeof(T).Name}");
         }
 
         public static Rlp Encode(Transaction transaction)
