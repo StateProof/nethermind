@@ -51,11 +51,11 @@ namespace Nethermind.Core
         public Keccak TransactionsRoot { get; set; }
         public Keccak ReceiptsRoot { get; set; }
         public Bloom Bloom { get; set; }
-        public BigInteger Difficulty { get; internal set; }
+        public BigInteger Difficulty { get; set; }
         public BigInteger Number { get; internal set; }
         public long GasUsed { get; set; }
         public long GasLimit { get; internal set; }
-        public BigInteger Timestamp { get; internal set; }
+        public BigInteger Timestamp { get; set; }
         public byte[] ExtraData { get; set; }
         public Keccak MixHash { get; set; }
         public ulong Nonce { get; set; }

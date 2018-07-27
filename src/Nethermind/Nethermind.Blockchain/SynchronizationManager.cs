@@ -112,9 +112,9 @@ namespace Nethermind.Blockchain
 
             // TODO: validation
 
-            if (_logger.IsInfoEnabled)
+            if (_logger.IsDebugEnabled)
             {
-                _logger.Info($"Adding new block {block.Hash} ({block.Number}) from {receivedFrom}");
+                _logger.Debug($"Adding new block {block.Hash} ({block.Number}) from {receivedFrom}");
             }
 
             bool getValueResult = _peers.TryGetValue(receivedFrom, out PeerInfo peerInfo);
@@ -165,9 +165,9 @@ namespace Nethermind.Blockchain
                     peerInfo.NumberReceived = block.Number;
                 }
 
-                if (_logger.IsInfoEnabled)
+                if (_logger.IsDebugEnabled)
                 {
-                    _logger.Info($"{block.Hash} ({block.Number}) adding result is {result}");
+                    _logger.Debug($"{block.Hash} ({block.Number}) adding result is {result}");
                 }
             }
             else if (block.Number > BlockTree.BestSuggested.Number + 1)
@@ -449,7 +449,7 @@ namespace Nethermind.Blockchain
                 {
                     if (_logger.IsInfoEnabled)
                     {
-                        _logger.Info($"No sync peers availible, finishing sync process, our block #: {BlockTree.BestSuggested.Number}");
+                        _logger.Info($"No sync peers available, finishing sync process, our block #: {BlockTree.BestSuggested.Number}");
                     }
                     return;
                 }

@@ -36,6 +36,7 @@ using Nethermind.Db;
 using Nethermind.Evm;
 using Nethermind.JsonRpc.Module;
 using Nethermind.KeyStore;
+using Nethermind.Mining;
 using Nethermind.Network;
 using Nethermind.Network.Config;
 using Nethermind.Network.Crypto;
@@ -279,7 +280,8 @@ namespace Nethermind.Runner.Runners
             var blockMiningTime = TimeSpan.FromMilliseconds(initParams.FakeMiningDelay ?? 12000);
             // var sealEngine = new EthashSealEngine(new Ethash());
             
-            var sealEngine = new FakeSealEngine(blockMiningTime, false);
+//            var sealEngine = new FakeSealEngine(blockMiningTime, false);
+            var sealEngine = new EthashSealEngine(new Ethash(_logManager), _logManager);
             sealEngine.IsMining = initParams.IsMining ?? false; 
             if (sealEngine.IsMining)
             {

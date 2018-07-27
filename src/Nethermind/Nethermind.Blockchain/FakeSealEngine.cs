@@ -17,10 +17,12 @@
  */
 
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+using Nethermind.Core.Extensions;
 
 namespace Nethermind.Blockchain
 {
@@ -41,21 +43,38 @@ namespace Nethermind.Blockchain
         {
             return _miningDelay + TimeSpan.FromMilliseconds((_exact ? 0 : 1) * (Random.Next((int)_miningDelay.TotalMilliseconds) - (int)_miningDelay.TotalMilliseconds / 2));
         }
-        
+
         public Task<Block> MineAsync(Block block, CancellationToken cancellationToken)
         {
-            block.Header.MixHash = Keccak.Zero;
-            block.Header.Hash = BlockHeader.CalculateHash(block.Header);
+            return Task.Factory.StartNew(() =>
+            {
+                BigInteger value = BigInteger.Parse(Console.ReadLine());
+                
+//                BigInteger value = block.Difficulty + 1;
+//                do
+//                {
+//                    test += 1;
+//                } while (!value.IsProbablePrime(1));
 
-            return _miningDelay == TimeSpan.Zero
-                ? Task.FromResult(block)
-                : Task.Delay(RandomizeDelay(), cancellationToken)
-                    .ContinueWith(t => block, cancellationToken);
+                block.Header.Timestamp = Timestamp.UnixUtcUntilNowSecs;
+                block.Header.MixHash = new Keccak(value.ToByteArray(true, true).PadLeft(32));
+
+//            block.Header.MixHash = Keccak.Zero;
+                block.Header.Hash = BlockHeader.CalculateHash(block.Header);
+                return block;
+            }, cancellationToken);
+
+//
+//            return _miningDelay == TimeSpan.Zero
+//                ? Task.FromResult(block)
+//                : Task.Delay(RandomizeDelay(), cancellationToken)
+//                    .ContinueWith(t => block, cancellationToken);
         }
 
         public bool Validate(BlockHeader header)
         {
-            return true;
+            BigInteger value = header.MixHash.Bytes.ToUnsignedBigInteger();
+            return value.IsProbablePrime(1);
         }
 
         public bool IsMining { get; set; }

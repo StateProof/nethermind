@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
+
+using System;
 using System.Numerics;
 using Nethermind.Core;
 using Nethermind.Core.Specs;
@@ -30,7 +32,7 @@ namespace Nethermind.Blockchain.Difficulty
             _specProvider = specProvider;
         }
 
-        private const long OfGenesisBlock = 131_072;
+        private const long OfGenesisBlock = 256;
 
         public BigInteger Calculate(
             BigInteger parentDifficulty,
@@ -40,29 +42,16 @@ namespace Nethermind.Blockchain.Difficulty
             bool parentHasUncles)
         {
             IReleaseSpec spec = _specProvider.GetSpec(blockNumber);
-            BigInteger baseIncrease = BigInteger.Divide(parentDifficulty, 2048);
+            BigInteger baseIncrease = BigInteger.Divide(parentDifficulty, OfGenesisBlock / 64);
             BigInteger timeAdjustment = TimeAdjustment(spec, parentTimestamp, currentTimestamp, parentHasUncles);
             BigInteger timeBomb = TimeBomb(spec, blockNumber);
-            return BigInteger.Max(
+            BigInteger difficulty = BigInteger.Max(
                 OfGenesisBlock,
                 parentDifficulty +
                 timeAdjustment * baseIncrease +
                 timeBomb);
-        }
-
-        public virtual BigInteger Calculate(BlockHeader blockHeader, BlockHeader parentBlockHeader, bool parentHasUncles)
-        {
-            if (parentBlockHeader == null)
-            {
-                return blockHeader.Difficulty;
-            }
-
-            return Calculate(
-                parentBlockHeader.Difficulty,
-                parentBlockHeader.Timestamp,
-                blockHeader.Timestamp,
-                blockHeader.Number,
-                parentHasUncles);
+            Console.WriteLine($"DIFFICULTY: {difficulty}");
+            return difficulty;
         }
 
         protected internal virtual BigInteger TimeAdjustment(
