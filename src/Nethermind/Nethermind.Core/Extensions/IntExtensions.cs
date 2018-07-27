@@ -25,12 +25,17 @@ namespace Nethermind.Core.Extensions
     {
         public static BigInteger Ether(this int @this)
         {
-            return @this * Unit.Ether;
+            return BigInteger.Multiply(@this, Unit.Ether);
         }
 
         public static BigInteger Wei(this int @this)
         {
-            return @this * Unit.Wei;
+            return BigInteger.Multiply(@this, Unit.Wei);
+        }
+        
+        public static BigInteger GWei(this int @this)
+        {
+            return BigInteger.Multiply(@this, Unit.GWei);
         }
 
         public static byte[] ToByteArray(this int value, Bytes.Endianness endianness)

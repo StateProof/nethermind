@@ -29,6 +29,7 @@ namespace Nethermind.Core.Test
             Assert.AreEqual(Unit.Ether, Unit.Finney * 1000);
             Assert.AreEqual(Unit.Ether, Unit.Szabo * 1000 * 1000);
             Assert.AreEqual(Unit.Ether, Unit.Wei * 1000 * 1000 * 1000 * 1000 * 1000 * 1000);
+            Assert.AreEqual(Unit.GWei, Unit.Wei * 1000 * 1000 * 1000);
         }
     }
 }
