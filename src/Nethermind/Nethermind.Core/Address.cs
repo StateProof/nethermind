@@ -144,5 +144,7 @@ namespace Nethermind.Core
         {
             return !(a == b);
         }
+
+        public byte this[int index] => ((byte[])Hex)[index];
     }
 }

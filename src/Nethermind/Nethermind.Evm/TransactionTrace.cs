@@ -16,6 +16,7 @@
  * along with the Nethermind. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Newtonsoft.Json;
@@ -45,12 +46,14 @@ namespace Nethermind.Evm
         public BigInteger Gas { get; set; } // TODO: not implemented
 
         [JsonProperty("failed", Order = 1)]
-        public bool Failed { get; set; } // TODO: not implemented
+        public bool Failed => EvmException != null;
 
         [JsonProperty("returnValue", Order = 2)]
         public byte[] ReturnValue { get; set; } // TODO: not implemented
 
         [JsonProperty("structLogs", Order = 3)]
         public List<TransactionTraceEntry> Entries { get; set; }
+        
+        public Type EvmException { get; set; }
     }
 }

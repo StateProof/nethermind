@@ -46,10 +46,13 @@ namespace Nethermind.Evm.Test
             _ethereumSigner = new EthereumSigner(_spec, logger);
             IBlockhashProvider blockhashProvider = new TestBlockhashProvider();
             IVirtualMachine virtualMachine = new VirtualMachine(_stateProvider, _storageProvider, blockhashProvider, logger);
-            
+
             _processor = new TransactionProcessor(_spec, _stateProvider, _storageProvider, virtualMachine, this, logger);
         }
-        
+
+        private const long GasLimit = 100000;
+        private static BigInteger _blockNumber = 6000000;
+
         [SetUp]
         public void Setup()
         {
@@ -59,6 +62,11 @@ namespace Nethermind.Evm.Test
             _stateDbSnapshot = _stateDb.TakeSnapshot();
             _storageDbSnapshot = _storageDbProvider.TakeSnapshot();
             _stateRoot = _stateProvider.StateRoot;
+
+            _stateProvider.CreateAccount(A, 100.Ether());
+            _stateProvider.CreateAccount(B, 100.Ether());
+
+            Metrics.EvmExceptions = 0;
         }
 
         private int _stateDbSnapshot;
@@ -84,28 +92,46 @@ namespace Nethermind.Evm.Test
         private readonly IStateProvider _stateProvider;
         private readonly IStorageProvider _storageProvider;
 
+        private void DeployContract(Address address, params byte[] code)
+        {
+            _stateProvider.CreateAccount(C, 100.Ether());
+            Keccak keccak = _stateProvider.UpdateCode(code);
+            _stateProvider.UpdateCodeHash(C, keccak, MainNetSpecProvider.Instance.GetSpec(_blockNumber));
+            _stateProvider.Commit(_spec.GenesisSpec);
+        }
+
         private TransactionReceipt Execute(params byte[] code)
         {
-            _stateProvider.CreateAccount(A, 100.Ether());
-
-            _stateProvider.CreateAccount(B, 100.Ether());
             Keccak codeHash = _stateProvider.UpdateCode(code);
             _stateProvider.UpdateCodeHash(TestObject.AddressB, codeHash, _spec.GenesisSpec);
 
-            _stateProvider.Commit(_spec.GenesisSpec);
-
             Transaction transaction = Build.A.Transaction
-                .WithGasLimit(100000)
+                .WithGasLimit(GasLimit)
                 .WithGasPrice(1)
                 .WithTo(TestObject.AddressB)
-                .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, 100000)
+                .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, _blockNumber)
                 .TestObject;
 
-            Assert.AreEqual(A, _ethereumSigner.RecoverAddress(transaction, 100000));
+            Assert.AreEqual(A, _ethereumSigner.RecoverAddress(transaction, _blockNumber));
 
-            Block block = Build.A.Block.WithNumber(10000).TestObject;
+            Block block = Build.A.Block.WithNumber(_blockNumber).TestObject;
             TransactionReceipt receipt = _processor.Execute(transaction, block.Header);
             return receipt;
+        }
+
+        private TransactionReceipt[] Execute(params Transaction[] transactions)
+        {
+            Block block = Build.A.Block.WithNumber(_blockNumber).TestObject;
+            TransactionReceipt[] receipts = new TransactionReceipt[transactions.Length];
+
+            for (int i = 0; i < transactions.Length; i++)
+            {
+                Transaction transaction = transactions[i];
+                TransactionReceipt receipt = _processor.Execute(transaction, block.Header);
+                receipts[i] = receipt;
+            }
+
+            return receipts;
         }
 
         [Test]
@@ -117,6 +143,7 @@ namespace Nethermind.Evm.Test
 
         private static readonly Address A = TestObject.AddressA;
         private static readonly Address B = TestObject.AddressB;
+        private static readonly Address C = TestObject.AddressC;
 
         [Test]
         public void Trace()
@@ -131,11 +158,11 @@ namespace Nethermind.Evm.Test
                 (byte)Instruction.PUSH1,
                 0,
                 (byte)Instruction.SSTORE);
-            
+
             Assert.AreEqual(5, _trace.Entries.Count, "number of entries");
             TransactionTraceEntry entry = _trace.Entries[1];
             Assert.AreEqual(0, entry.Depth, nameof(entry.Depth));
-            Assert.AreEqual(79000 - GasCostOf.VeryLow, entry.Gas, nameof(entry.Gas));
+            Assert.AreEqual(GasLimit - 21000 - GasCostOf.VeryLow, entry.Gas, nameof(entry.Gas));
             Assert.AreEqual(GasCostOf.VeryLow, entry.GasCost, nameof(entry.GasCost));
             Assert.AreEqual(0, entry.Memory.Count, nameof(entry.Memory));
             Assert.AreEqual(1, entry.Stack.Count, nameof(entry.Stack));
@@ -143,7 +170,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(2, entry.Pc, nameof(entry.Pc));
             Assert.AreEqual("PUSH1", entry.Operation, nameof(entry.Operation));
         }
-        
+
         [Test]
         public void Add_0_0()
         {
@@ -323,7 +350,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 3 + GasCostOf.Exp + GasCostOf.SSet, receipt.GasUsed, "gas");
             Assert.AreEqual(BigInteger.One.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Exp_0_160()
         {
@@ -339,7 +366,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 3 + GasCostOf.Exp + GasCostOf.ExpByteEip160 + GasCostOf.SReset, receipt.GasUsed, "gas");
             Assert.AreEqual(BigInteger.Zero.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Exp_1_160()
         {
@@ -355,7 +382,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 3 + GasCostOf.Exp + GasCostOf.ExpByteEip160 + GasCostOf.SSet, receipt.GasUsed, "gas");
             Assert.AreEqual(BigInteger.One.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Sub_0_0()
         {
@@ -371,7 +398,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 4 + GasCostOf.SReset, receipt.GasUsed, "gas");
             Assert.AreEqual(new byte[] {0}, _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Not_0()
         {
@@ -385,7 +412,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 3 + GasCostOf.SSet, receipt.GasUsed, "gas");
             Assert.AreEqual((BigInteger.Pow(2, 256) - 1).ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Or_0_0()
         {
@@ -401,7 +428,7 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(GasCostOf.Transaction + GasCostOf.VeryLow * 4 + GasCostOf.SReset, receipt.GasUsed, "gas");
             Assert.AreEqual(BigInteger.Zero.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
-        
+
         [Test]
         public void Sstore_twice_0_same_storage_should_refund_only_once()
         {
@@ -415,12 +442,98 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(BigInteger.Zero.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
 
+        [Test]
+        public void Stack_underflow()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Stack_overflow()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Invalid_jump()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Invalid_op()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Test]
+        public void Deploy_contract_call_static_call_violation()
+        {
+            IsTracingEnabled = true;
+            Transaction a = Build.A.Transaction
+                .WithInit(new byte[]
+                {
+                    // fill it
+                })
+                .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, _blockNumber)
+                .WithGasLimit(GasLimit)
+                .TestObject;
+
+            var receiptsA = Execute(a);
+            OutputTrace();
+            
+            Assert.AreEqual(StatusCode.Success, receiptsA[0].StatusCode, "A");
+            Assert.True(_stateProvider.AccountExists(_expectedContractAddressA), "deployed");
+            Assert.AreNotEqual(Keccak.OfAnEmptyString, _stateProvider.GetCodeHash(_expectedContractAddressA), "code A");
+            
+            Transaction b = Build.A.Transaction
+                .WithInit(new byte[]
+                {
+                    // fill it
+                })
+                .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, _blockNumber)
+                .WithGasLimit(GasLimit)
+                .WithNonce(1)
+                .TestObject;
+
+            var receiptsB = Execute(b);
+            OutputTrace();
+            
+            Assert.AreEqual(StatusCode.Success, receiptsB[0].StatusCode, "B");
+            Assert.True(_stateProvider.AccountExists(_expectedContractAddressB), "deployed B");
+            Assert.AreNotEqual(Keccak.OfAnEmptyString, _stateProvider.GetCodeHash(_expectedContractAddressB), "code B");
+            
+            Transaction c = Build.A.Transaction
+                .WithTo(_expectedContractAddressB)
+                .WithData(new byte[]{})
+                .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, _blockNumber)
+                .WithGasLimit(GasLimit)
+                .WithNonce(2)
+                .TestObject;
+            
+            var receiptsC = Execute(c);
+            OutputTrace();
+            
+            Assert.AreEqual(StatusCode.Success, receiptsC[0].StatusCode, "C");
+            Assert.Greater(receiptsC[0].GasUsed, GasCostOf.Transaction + 20000, "gas used C");
+        }
+
+        private Address _expectedContractAddressA = new Address("0x24cd2edba056b7c654a50e8201b619d4f624fdda");
+        private Address _expectedContractAddressB = new Address("0xdc98b4d0af603b4fb5ccdd840406a0210e5deff8");
+
         private TransactionTrace _trace;
-        
+
         public bool IsTracingEnabled { get; private set; }
+
         public void SaveTrace(Keccak hash, TransactionTrace trace)
         {
             _trace = trace;
+        }
+
+        private void OutputTrace()
+        {
+            string text = new UnforgivingJsonSerializer().Serialize(_trace, true);
+            Console.WriteLine(text);
         }
 
         [Test]
