@@ -10,7 +10,10 @@ namespace Nethermind.Workshop.RlpPlayground
         private static void Main(string[] args)
         {
             byte[] byteArray = new byte[2] {1, 2};
-            Console.WriteLine(Rlp.Encode(byteArray).ToString(true));
+            Console.WriteLine("byte array {0}   {1}", byteArray, byteArray.Length);
+            var xx = Rlp.Encode(byteArray);
+            Console.WriteLine("byte array {0}   {1}", xx, xx.Length);
+            Console.WriteLine(xx.ToString(true));
             Console.ReadKey();
         }
     }
