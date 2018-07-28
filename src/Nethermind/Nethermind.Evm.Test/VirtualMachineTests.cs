@@ -442,16 +442,34 @@ namespace Nethermind.Evm.Test
             Assert.AreEqual(BigInteger.Zero.ToBigEndianByteArray(), _storageProvider.Get(new StorageAddress(B, 0)), "storage");
         }
 
+        // Steo - modified at the workshop
         [Test]
         public void Stack_underflow()
         {
-            throw new NotImplementedException();
+            IsTracingEnabled = true;  // tracing
+            TransactionReceipt rcp = Execute((byte)Instruction.POP);
+            Assert.AreEqual(StatusCode.Failure, rcp.StatusCode);
+            Assert.AreEqual(GasLimit, rcp.GasUsed);
+            OutputTrace(); // tracing 
+            // if the transaction fails, all the gas is gone.. 
         }
 
+        // Steo - modified at the workshop
         [Test]
         public void Stack_overflow()
         {
-            throw new NotImplementedException();
+            IsTracingEnabled = true;
+            TransactionReceipt rcp = Execute(
+                (byte)Instruction.JUMPDEST,
+                (byte)Instruction.PUSH1,
+                0,
+                (byte)Instruction.PUSH1,
+                0,
+                (byte)Instruction.JUMP
+            );
+            OutputTrace();
+            Assert.AreEqual(StatusCode.Failure, rcp.StatusCode);
+            Assert.AreEqual(GasLimit, rcp.GasUsed);
         }
 
         [Test]
@@ -466,14 +484,29 @@ namespace Nethermind.Evm.Test
             throw new NotImplementedException();
         }
 
+        // Steo - modified at the workshop
         [Test]
         public void Deploy_contract_call_static_call_violation()
         {
             IsTracingEnabled = true;
             Transaction a = Build.A.Transaction
-                .WithInit(new byte[]
+                .WithInit(new byte[]  // Init a transaction, run the code, give back the code that will be 
                 {
                     // fill it
+                    (byte)Instruction.PUSH5,   // our code    (5 byte)
+                    // actual code of the smart contract
+                    (byte)Instruction.PUSH1,   // the address (1 byte)
+                    1,
+                    (byte)Instruction.PUSH1,
+                    1,
+                    (byte)Instruction.SSTORE,    // take 2 values, address and value and store 
+                    // end of our smart contract code (push 1 push 1, store)
+                    (byte)Instruction.PUSH1,
+                    0,                          // at this point I have 2 elem in the stack: the code (result of SSTORE) and an address (=0)
+                    (byte)Instruction.MSTORE,    // store in memory
+                    (byte)Instruction.PUSH1,
+                    1,
+                    (byte)Instruction.RETURN
                 })
                 .SignedAndResolved(_ethereumSigner, TestObject.PrivateKeyA, _blockNumber)
                 .WithGasLimit(GasLimit)
